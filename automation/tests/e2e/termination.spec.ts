@@ -90,6 +90,6 @@ test.describe('Termination scenario (Task 12)', () => {
     await execution.terminate();
 
     await expect(execution.errorAlert()).toBeVisible();
-    await expect(execution.errorAlert()).toContainText('terminated');
+    await expect(execution.errorAlert()).toContainText('ยุติ');
   });
 });

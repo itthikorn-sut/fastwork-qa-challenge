@@ -4,6 +4,7 @@
   "description": "Milestone Quotation and Payment Flow - QA Automation",
   "scripts": {
     "test": "playwright test",
+    "test:headed": "playwright test --headed",
     "test:ui": "playwright test automation/tests/ui",
     "test:api": "playwright test automation/tests/api",
     "test:report": "playwright show-report",

@@ -240,6 +240,28 @@ app.post('/api/v1/quotations/:id/milestones/:round/accept', (req: Request, res: 
   });
 });
 
+// POST /api/v1/quotations/:id/milestones/:round/reject - buyer rejects work
+app.post('/api/v1/quotations/:id/milestones/:round/reject', (req: Request, res: Response) => {
+  const quotation = quotations.get(req.params.id);
+  if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+  const round = parseInt(req.params.round);
+  const milestone = quotation.milestones.find(m => m.round === round);
+  if (!milestone) return res.status(404).json({ error: `Milestone round ${round} not found` });
+  if (milestone.status !== 'submitted') {
+    return res.status(409).json({ error: `Milestone round ${round} must be submitted before rejection` });
+  }
+
+  milestone.status = 'pending';
+  const { reason } = req.body;
+  return res.status(200).json({
+    quotation_id: quotation.id,
+    round,
+    status: 'rejected',
+    reason: reason || 'No reason provided',
+  });
+});
+
 // POST /api/v1/quotations/:id/terminate - buyer terminates
 app.post('/api/v1/quotations/:id/terminate', (req: Request, res: Response) => {
   const quotation = quotations.get(req.params.id);

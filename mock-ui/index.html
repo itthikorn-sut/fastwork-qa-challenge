@@ -1,680 +1,579 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fastwork - Milestone Quotation & Payment</title>
+  <title>Fastwork</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; color: #2d3436; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans Thai','Sarabun',sans-serif;background:#0d1b4b;min-height:100vh;overflow:hidden}
 
-    header {
-      background: #6c5ce7; color: white;
-      padding: 16px 32px; display: flex; align-items: center; gap: 12px;
-    }
-    header h1 { font-size: 20px; font-weight: 600; }
+    /* ── fake fastwork background ── */
+    .fake-page{position:fixed;inset:0;filter:blur(3px);pointer-events:none;user-select:none;display:flex;flex-direction:column}
+    .fake-nav{background:#1a237e;height:54px;display:flex;align-items:center;padding:0 20px;gap:12px;color:#fff;font-weight:700;font-size:17px;flex-shrink:0}
+    .fake-nav span{margin-left:auto;font-size:12px;opacity:.7;display:flex;gap:20px}
+    .fake-body{display:flex;flex:1;overflow:hidden}
+    .fake-sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;padding:12px 8px;flex-shrink:0}
+    .fake-row{height:32px;background:#f3f4f6;border-radius:6px;margin-bottom:8px}
+    .fake-row.hi{background:#dbeafe}
+    .fake-chat{flex:1;background:#f8f9fa;padding:16px;display:flex;flex-direction:column;gap:12px}
+    .fake-msg{display:flex;gap:10px}
+    .fake-msg.r{flex-direction:row-reverse}
+    .fake-av{width:34px;height:34px;border-radius:50%;background:#93c5fd;flex-shrink:0}
+    .fake-av.r{background:#fca5a5}
+    .fake-bbl{background:#fff;border-radius:10px;padding:10px 14px;max-width:260px}
+    .fake-line{height:9px;background:#e5e7eb;border-radius:4px;margin-bottom:5px}
 
-    .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+    /* ── overlay ── */
+    .overlay{position:fixed;inset:0;background:rgba(10,18,60,.6);z-index:10}
 
-    .step-bar {
-      display: flex; gap: 0; margin-bottom: 32px;
-      border-radius: 8px; overflow: hidden; border: 1px solid #dfe6e9;
-    }
-    .step {
-      flex: 1; padding: 12px 8px; text-align: center; font-size: 13px;
-      background: #fff; color: #b2bec3; border-right: 1px solid #dfe6e9;
-      cursor: default; transition: all .2s;
-    }
-    .step:last-child { border-right: none; }
-    .step.active { background: #6c5ce7; color: white; font-weight: 600; }
-    .step.done { background: #00b894; color: white; }
+    /* ── modal ── */
+    .modal-wrap{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:12px}
+    .modal{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.45);display:flex;flex-direction:column}
 
-    .card {
-      background: white; border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08); padding: 28px; margin-bottom: 20px;
-    }
-    .card h2 { font-size: 18px; margin-bottom: 20px; color: #6c5ce7; }
+    /* modal header */
+    .mhdr{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:5;flex-shrink:0}
+    .mtitle{font-size:15px;font-weight:700;color:#111928}
+    .moid{font-size:11px;color:#6b7280;margin-top:2px}
 
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-    label { font-size: 13px; font-weight: 600; color: #636e72; }
-    input, textarea, select {
-      padding: 10px 12px; border: 1.5px solid #dfe6e9; border-radius: 8px;
-      font-size: 14px; transition: border-color .2s; font-family: inherit;
-    }
-    input:focus, textarea:focus, select:focus {
-      outline: none; border-color: #6c5ce7;
-    }
-    input.error, textarea.error { border-color: #d63031; }
-    .field-error { font-size: 12px; color: #d63031; margin-top: 2px; display: none; }
-    .field-error.show { display: block; }
-    textarea { resize: vertical; min-height: 72px; }
+    /* step bar */
+    .step-bar{display:flex;align-items:center;padding:12px 20px;border-bottom:1px solid #e5e7eb;background:#f9fafb;flex-shrink:0}
+    .step-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;min-width:60px}
+    .sdot{width:26px;height:26px;border-radius:50%;background:#e5e7eb;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#9ca3af;transition:all .2s}
+    .slbl{font-size:10px;color:#9ca3af;white-space:nowrap;font-weight:500;text-align:center}
+    .step-item.active .sdot{background:#1a56db;border-color:#1a56db;color:#fff}
+    .step-item.active .slbl{color:#1a56db;font-weight:700}
+    .step-item.done .sdot{background:#1a56db;border-color:#1a56db;color:#fff}
+    .step-item.done .slbl{color:#1a56db}
+    .sconn{flex:1;height:2px;background:#e5e7eb;margin:0 4px;margin-bottom:18px;transition:background .2s}
+    .sconn.done{background:#1a56db}
 
-    .milestone-block {
-      border: 1.5px solid #dfe6e9; border-radius: 10px;
-      padding: 20px; margin-bottom: 16px; position: relative;
-    }
-    .milestone-block h3 {
-      font-size: 14px; font-weight: 700; margin-bottom: 16px;
-      color: #6c5ce7; display: flex; align-items: center; gap: 8px;
-    }
-    .badge {
-      background: #6c5ce7; color: white; border-radius: 50%;
-      width: 24px; height: 24px; display: inline-flex;
-      align-items: center; justify-content: center; font-size: 12px;
-    }
+    /* body */
+    .mbody{padding:18px 20px;flex:1}
 
-    .btn {
-      padding: 11px 24px; border: none; border-radius: 8px;
-      font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s;
-    }
-    .btn-primary { background: #6c5ce7; color: white; }
-    .btn-primary:hover { background: #5a4fd6; }
-    .btn-primary:disabled { background: #b2bec3; cursor: not-allowed; }
-    .btn-success { background: #00b894; color: white; }
-    .btn-success:hover { background: #009d7d; }
-    .btn-danger { background: #d63031; color: white; }
-    .btn-danger:hover { background: #b71c1c; }
-    .btn-secondary { background: #dfe6e9; color: #636e72; }
-    .btn-secondary:hover { background: #ccc; }
-    .btn-sm { padding: 7px 14px; font-size: 13px; }
+    /* forms */
+    .fg{margin-bottom:12px}
+    label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px}
+    input,textarea,select{width:100%;padding:8px 11px;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;font-family:inherit;color:#111928;transition:border-color .15s;background:#fff}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+    input.err{border-color:#ef4444}
+    textarea{resize:vertical;min-height:60px}
+    .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .ferr{font-size:11px;color:#ef4444;margin-top:2px;display:none}
+    .ferr.show{display:block}
 
-    .btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    /* milestone block */
+    .mblock{border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
+    .mhd{font-size:12px;font-weight:700;color:#1a56db;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .rbadge{background:#1a56db;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
 
-    .alert {
-      padding: 12px 16px; border-radius: 8px; font-size: 14px;
-      margin-bottom: 16px; display: none;
-    }
-    .alert.show { display: block; }
-    .alert-error { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
-    .alert-success { background: #f0fff4; border: 1px solid #9ae6b4; color: #276749; }
-    .alert-info { background: #ebf8ff; border: 1px solid #90cdf4; color: #2b6cb0; }
+    /* buttons */
+    .btn{padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+    .btn-primary{background:#1a56db;color:#fff}.btn-primary:hover{background:#1647c0}.btn-primary:disabled{background:#9ca3af;cursor:not-allowed}
+    .btn-success{background:#057a55;color:#fff}.btn-success:hover{background:#046944}.btn-success:disabled{background:#9ca3af;cursor:not-allowed}
+    .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}.btn-danger:disabled{background:#9ca3af;cursor:not-allowed}
+    .btn-outline{background:#fff;border:1.5px solid #d1d5db;color:#374151}.btn-outline:hover{background:#f3f4f6}.btn-outline:disabled{opacity:.5;cursor:not-allowed}
+    .btn-sm{padding:5px 12px;font-size:12px}
+    .btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
 
-    .summary-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .summary-table th, .summary-table td {
-      padding: 10px 14px; text-align: left; border-bottom: 1px solid #dfe6e9;
-    }
-    .summary-table th { background: #f8f9fa; font-weight: 600; color: #636e72; }
-    .summary-table .total-row td { font-weight: 700; color: #6c5ce7; }
+    /* alerts */
+    .alert{padding:9px 13px;border-radius:8px;font-size:12px;margin-bottom:12px;display:none;white-space:pre-line}
+    .alert.show{display:block}
+    .alert-error{background:#fef2f2;border:1px solid #fca5a5;color:#dc2626}
+    .alert-success{background:#f0fdf4;border:1px solid #86efac;color:#15803d}
+    .alert-info{background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8}
+    .alert-warning{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}
 
-    .status-badge {
-      display: inline-block; padding: 3px 10px; border-radius: 20px;
-      font-size: 12px; font-weight: 600;
-    }
-    .status-pending { background: #ffeaa7; color: #856404; }
-    .status-submitted { background: #74b9ff; color: #1a5276; }
-    .status-accepted { background: #55efc4; color: #1b4332; }
-    .status-transferred { background: #00b894; color: white; }
-    .status-terminated { background: #d63031; color: white; }
+    /* vat summary */
+    .vsum{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 13px;font-size:12px}
+    .vrow{display:flex;justify-content:space-between;padding:2px 0;color:#374151}
+    .vrow.hl{font-weight:700;color:#1a56db;font-size:14px;padding-top:7px;border-top:1px solid #e5e7eb;margin-top:4px}
+    .vrow.sub{color:#6b7280}
 
-    .payment-card { max-width: 420px; }
-    .card-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* summary table */
+    .stbl{width:100%;border-collapse:collapse;font-size:12px}
+    .stbl th{background:#f3f4f6;padding:7px 10px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb}
+    .stbl td{padding:7px 10px;border-bottom:1px solid #f3f4f6;color:#374151}
 
-    .section-hidden { display: none; }
+    /* add round btn */
+    .add-round-btn{width:100%;padding:9px;border:2px dashed #d1d5db;background:#fff;border-radius:8px;color:#6b7280;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:10px}
+    .add-round-btn:hover{border-color:#1a56db;color:#1a56db}
 
-    .add-round-btn {
-      border: 2px dashed #dfe6e9; background: none; color: #b2bec3;
-      width: 100%; padding: 12px; border-radius: 10px; font-size: 14px;
-      cursor: pointer; transition: all .2s;
-    }
-    .add-round-btn:hover { border-color: #6c5ce7; color: #6c5ce7; }
+    /* notice */
+    .notice{background:#eff6ff;border-left:3px solid #1a56db;padding:7px 11px;border-radius:0 6px 6px 0;font-size:11px;color:#1e40af;margin-top:10px}
 
-    .milestone-action { display: flex; gap: 8px; margin-top: 12px; }
+    /* status */
+    .sbadge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+    .status-pending{background:#fef9c3;color:#713f12}
+    .status-submitted{background:#dbeafe;color:#1e40af}
+    .status-accepted{background:#dcfce7;color:#14532d}
+    .status-transferred{background:#059669;color:#fff}
+    .status-rejected{background:#fee2e2;color:#991b1b}
+    .status-terminated{background:#374151;color:#fff}
 
-    #total-display {
-      font-size: 16px; font-weight: 700; color: #6c5ce7;
-      padding: 12px; background: #f0eeff; border-radius: 8px; text-align: center;
-      margin-top: 8px;
-    }
+    /* payment tabs */
+    .ptabs{display:flex;border-bottom:2px solid #e5e7eb;margin-bottom:14px;gap:0;overflow-x:auto}
+    .ptab{padding:7px 13px;font-size:11px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
+    .ptab.active{color:#1a56db;border-bottom-color:#1a56db}
+
+    /* exec table */
+    .etbl{width:100%;border-collapse:collapse;font-size:12px}
+    .etbl th{background:#f3f4f6;padding:7px 8px;text-align:left;font-weight:600;color:#374151;font-size:11px}
+    .etbl td{padding:8px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+
+    /* success */
+    .success-screen{text-align:center;padding:28px 16px}
+    .sicon{width:52px;height:52px;background:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px;color:#fff}
+
+    /* checkbox */
+    .cbrow{display:flex;align-items:flex-start;gap:8px;margin:12px 0;font-size:11px;color:#374151}
+    .cbrow input[type=checkbox]{width:auto;margin-top:2px;flex-shrink:0;cursor:pointer}
+
+    /* secure */
+    .secure{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:#6b7280;margin-top:8px}
+
+    .hidden{display:none}
+    .divider{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
   </style>
 </head>
 <body>
 
-<header>
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-  </svg>
-  <h1>Fastwork — Milestone Quotation & Payment</h1>
-</header>
-
-<div class="container">
-
-  <!-- Step Indicator -->
-  <div class="step-bar">
-    <div class="step active" id="step-1">1. Create Quotation</div>
-    <div class="step" id="step-2">2. Review & Accept</div>
-    <div class="step" id="step-3">3. Payment</div>
-    <div class="step" id="step-4">4. Milestone Execution</div>
+<!-- fake background -->
+<div class="fake-page" aria-hidden="true">
+  <div class="fake-nav">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    fastwork
+    <span><span>📦 งาน</span><span>💬 ข้อความ</span><span>🔔</span><span>👤</span></span>
   </div>
+  <div class="fake-body">
+    <div class="fake-sidebar">
+      <div class="fake-row hi"></div><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row"></div>
+    </div>
+    <div class="fake-chat">
+      <div class="fake-msg"><div class="fake-av"></div><div class="fake-bbl"><div class="fake-line" style="width:75%"></div><div class="fake-line" style="width:55%"></div></div></div>
+      <div class="fake-msg r"><div class="fake-av r"></div><div class="fake-bbl"><div class="fake-line" style="width:65%"></div><div class="fake-line" style="width:85%"></div><div class="fake-line" style="width:45%"></div></div></div>
+      <div class="fake-msg"><div class="fake-av"></div><div class="fake-bbl"><div class="fake-line" style="width:50%"></div></div></div>
+      <div class="fake-msg r"><div class="fake-av r"></div><div class="fake-bbl"><div class="fake-line" style="width:70%"></div><div class="fake-line" style="width:40%"></div></div></div>
+    </div>
+  </div>
+</div>
+<div class="overlay"></div>
 
-  <!-- STEP 1: Create Quotation -->
-  <div id="section-create">
-    <div class="card">
-      <h2>Create Milestone Quotation</h2>
+<!-- modal -->
+<div class="modal-wrap">
+<div class="modal">
 
-      <div class="alert alert-error" id="create-error"></div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Seller ID</label>
-          <input type="text" id="seller-id" value="SELLER-001" data-testid="seller-id" />
-        </div>
-        <div class="form-group">
-          <label>Buyer ID</label>
-          <input type="text" id="buyer-id" value="BUYER-001" data-testid="buyer-id" />
-        </div>
-      </div>
-
-      <div id="milestones-container"></div>
-
-      <button class="add-round-btn" id="add-round-btn" data-testid="add-round-btn">+ Add Milestone Round</button>
-
-      <div id="total-display" style="display:none">Total: <span id="total-amount">0</span> THB</div>
-
-      <br/>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="submit-quotation-btn" data-testid="submit-quotation-btn">Submit Quotation</button>
-      </div>
+  <!-- header -->
+  <div class="mhdr">
+    <div>
+      <div class="mtitle">ใบเสนอราคา</div>
+      <div class="moid" id="order-id-display">กรุณากรอกข้อมูลใบเสนอราคา</div>
     </div>
   </div>
 
-  <!-- STEP 2: Review & Accept -->
-  <div id="section-review" class="section-hidden">
-    <div class="card">
-      <h2>Review Quotation</h2>
-      <div class="alert alert-info show" id="review-info">Buyer is reviewing the quotation below.</div>
+  <!-- steps -->
+  <div class="step-bar">
+    <div class="step-item active" id="step-1"><div class="sdot">1</div><div class="slbl">กำหนดเอง</div></div>
+    <div class="sconn" id="conn-1"></div>
+    <div class="step-item" id="step-2"><div class="sdot">2</div><div class="slbl">การทำงาน</div></div>
+    <div class="sconn" id="conn-2"></div>
+    <div class="step-item" id="step-3"><div class="sdot">3</div><div class="slbl">ชำระเงิน</div></div>
+    <div class="sconn" id="conn-3"></div>
+    <div class="step-item" id="step-4"><div class="sdot">4</div><div class="slbl">ดำเนินงาน</div></div>
+  </div>
 
-      <table class="summary-table" id="review-table">
-        <thead>
-          <tr><th>Round</th><th>Title</th><th>Deliverables</th><th>Due Date</th><th>Amount (THB)</th></tr>
-        </thead>
+  <div class="mbody">
+
+    <!-- ── STEP 1: Create ── -->
+    <div id="section-create">
+      <div class="r2" style="margin-bottom:12px">
+        <div class="fg" style="margin-bottom:0"><label>รหัสผู้ขาย</label><input id="seller-id" data-testid="seller-id" value="SELLER-001"/></div>
+        <div class="fg" style="margin-bottom:0"><label>รหัสผู้ซื้อ</label><input id="buyer-id" data-testid="buyer-id" value="BUYER-001"/></div>
+      </div>
+      <div class="alert alert-error" id="create-error"></div>
+      <div id="milestones-container"></div>
+      <button class="add-round-btn" id="add-round-btn" data-testid="add-round-btn">+ เพิ่มภาระงาน</button>
+      <div id="total-display" class="vsum hidden" style="margin-bottom:10px">
+        <div class="vrow"><span>ยอดรวม</span><span id="total-amount-wrap"><span id="total-amount">0</span> บาท</span></div>
+        <div class="vrow sub"><span>ภาษีมูลค่าเพิ่ม 7%</span><span><span id="vat-amount">0.00</span> บาท</span></div>
+        <div class="vrow hl"><span>ราคารวมที่ต้องชำระ</span><span><span id="grand-total">0.00</span> บาท</span></div>
+      </div>
+      <div class="notice">ⓘ ผู้ซื้อจะทยอยจ่ายตามงวดงาน เงินจะโอนให้ผู้ขายเมื่อผู้ซื้อยืนยันรับงานแต่ละงวด</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="submit-quotation-btn" data-testid="submit-quotation-btn">ส่งใบเสนอราคา</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Review ── -->
+    <div id="section-review" class="hidden">
+      <div style="font-size:13px;font-weight:700;color:#111928;margin-bottom:10px">ใบเสนอราคาที่โปรเจกต์</div>
+      <table class="stbl">
+        <thead><tr><th>งวด</th><th>ชื่อภาระงาน</th><th>สิ่งส่งมอบ</th><th>วันสิ้นสุด</th><th>จำนวน (บาท)</th></tr></thead>
         <tbody id="review-tbody"></tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td colspan="4">Total</td>
-            <td id="review-total"></td>
-          </tr>
-        </tfoot>
       </table>
-
-      <br/>
+      <div class="vsum" style="margin-top:10px">
+        <div class="vrow sub"><span>ยอดรวม (ก่อน VAT)</span><span><span id="review-subtotal">0</span> บาท</span></div>
+        <div class="vrow sub"><span>ภาษีมูลค่าเพิ่ม 7%</span><span><span id="review-vat">0</span> บาท</span></div>
+        <div class="vrow hl"><span>ราคารวมที่ต้องชำระ</span><span><span id="review-total">0</span> บาท</span></div>
+      </div>
+      <div class="notice" style="margin-top:8px">ⓘ ผู้ซื้อชำระงวดแรก <strong id="first-round-amt">—</strong> บาท ก่อน งวดถัดไปชำระหลังยืนยันรับงานแต่ละงวด</div>
+      <div class="cbrow">
+        <input type="checkbox" id="agree-cb"/>
+        <label for="agree-cb" style="font-weight:400;cursor:pointer">ข้าพเจ้ายอมรับ<strong>ข้อตกลงการชำระเงิน</strong>และ<strong>เงื่อนไขการใช้บริการ</strong>ของ Fastwork</label>
+      </div>
       <div class="alert alert-error" id="accept-error"></div>
       <div class="btn-row">
-        <button class="btn btn-success" id="accept-btn" data-testid="accept-btn">Accept Quotation</button>
-        <button class="btn btn-secondary" id="back-to-create-btn">Back</button>
+        <button class="btn btn-primary" id="accept-btn" data-testid="accept-btn">ยืนยัน</button>
+        <button class="btn btn-outline" id="back-to-create-btn">ยกเลิก</button>
       </div>
     </div>
-  </div>
 
-  <!-- STEP 3: Payment -->
-  <div id="section-payment" class="section-hidden">
-    <div class="card payment-card">
-      <h2>Payment</h2>
-
-      <div class="alert alert-success" id="payment-amount-info show" style="display:block; margin-bottom:16px;">
-        Amount to pay: <strong id="pay-amount-display"></strong> THB
+    <!-- ── STEP 2 sent ── -->
+    <div id="section-sent" class="hidden">
+      <div class="success-screen">
+        <div class="sicon">✓</div>
+        <div style="font-size:15px;font-weight:700;color:#111928;margin-bottom:8px">ส่งใบเสนอราคาให้ผู้ว่าจ้างเรียบร้อยแล้ว</div>
+        <div style="font-size:12px;color:#6b7280">คุณสามารถติดตามสถานะใบเสนอราคาได้<br/>หากผู้ว่าจ้างตอบรับ ระบบจะแจ้งเตือนคุณ</div>
       </div>
+    </div>
 
+    <!-- ── STEP 3: Payment ── -->
+    <div id="section-payment" class="hidden">
+      <div style="font-size:13px;font-weight:700;color:#111928;margin-bottom:10px">รายการที่ต้องชำระ</div>
+      <div id="pay-round-summary" class="vsum" style="margin-bottom:14px"></div>
+      <div class="ptabs">
+        <div class="ptab active" onclick="swTab(this)">💳 บัตรเครดิต/เดบิต</div>
+        <div class="ptab" onclick="swTab(this)">📷 QR Code</div>
+        <div class="ptab" onclick="swTab(this)">🪙 Fastwork Coin</div>
+        <div class="ptab" onclick="swTab(this)">💚 TrueMoney</div>
+      </div>
       <div class="alert alert-error" id="payment-error"></div>
       <div class="alert alert-success" id="payment-success"></div>
-
-      <div class="form-group">
-        <label>Card Number</label>
-        <input type="text" id="card-number" placeholder="1234 5678 9012 3456"
-          maxlength="19" data-testid="card-number" />
-        <span class="field-error" id="card-number-error">Must be 16 digits</span>
+      <div class="fg">
+        <label>หมายเลขบัตร *</label>
+        <input id="card-number" data-testid="card-number" placeholder="•••• •••• •••• ••••" maxlength="19"/>
+        <div class="ferr" id="card-number-error">กรุณากรอกหมายเลขบัตร 16 หลัก</div>
       </div>
-
-      <div class="card-input-row">
-        <div class="form-group">
-          <label>Expiry (MM/YY)</label>
-          <input type="text" id="card-expiry" placeholder="12/28" maxlength="5" data-testid="card-expiry" />
-          <span class="field-error" id="card-expiry-error">Use MM/YY format</span>
+      <div class="fg"><label>ชื่อผู้ถือบัตร</label><input id="card-holder" placeholder="ชื่อบนบัตร"/></div>
+      <div class="r2">
+        <div class="fg" style="margin-bottom:0">
+          <label>MM/ปป *</label>
+          <input id="card-expiry" data-testid="card-expiry" placeholder="MM/YY" maxlength="5"/>
+          <div class="ferr" id="card-expiry-error">รูปแบบ MM/YY เท่านั้น</div>
         </div>
-        <div class="form-group">
-          <label>CVV</label>
-          <input type="text" id="card-cvv" placeholder="123" maxlength="4" data-testid="card-cvv" />
-          <span class="field-error" id="card-cvv-error">Must be 3-4 digits</span>
+        <div class="fg" style="margin-bottom:0">
+          <label>CVV *</label>
+          <input id="card-cvv" data-testid="card-cvv" placeholder="•••" maxlength="4"/>
+          <div class="ferr" id="card-cvv-error">CVV ต้องมี 3-4 หลัก</div>
         </div>
       </div>
-
-      <div class="form-group">
-        <label>Currency</label>
+      <div class="fg" style="margin-top:10px">
+        <label>สกุลเงิน</label>
         <select id="currency" data-testid="currency">
-          <option value="THB">THB — Thai Baht</option>
-          <option value="USD">USD — US Dollar</option>
-          <option value="EUR">EUR — Euro</option>
+          <option value="THB">THB — บาทไทย</option>
+          <option value="USD">USD — ดอลลาร์สหรัฐ</option>
+          <option value="EUR">EUR — ยูโร</option>
         </select>
       </div>
-
-      <div class="btn-row">
-        <button class="btn btn-primary" id="pay-btn" data-testid="pay-btn">Pay Now</button>
-      </div>
+      <!-- hidden span keeps English amount for test assertions -->
+      <span id="pay-amount-display" style="display:none"></span>
+      <button class="btn btn-primary" id="pay-btn" data-testid="pay-btn" style="width:100%;margin-top:6px;padding:11px">
+        ชำระจำนวน <span id="pay-amount-th">0</span> บาท
+      </button>
+      <div class="secure">🔒 100% Secure Checkout</div>
     </div>
-  </div>
 
-  <!-- STEP 4: Milestone Execution -->
-  <div id="section-execution" class="section-hidden">
-    <div class="card">
-      <h2>Milestone Execution</h2>
-
-      <div class="alert alert-success show" id="exec-info">
-        Payment confirmed. Seller can now submit work per milestone round.
-      </div>
+    <!-- ── STEP 4: Execution ── -->
+    <div id="section-execution" class="hidden">
+      <div class="alert alert-success show" id="exec-success-info" style="margin-bottom:10px">✓ ชำระเงินสำเร็จแล้ว กรุณาดำเนินงานตามงวดที่กำหนด</div>
       <div class="alert alert-error" id="exec-error"></div>
-
-      <table class="summary-table">
-        <thead>
-          <tr>
-            <th>Round</th><th>Title</th><th>Amount (THB)</th>
-            <th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
+      <table class="etbl">
+        <thead><tr><th>งวด</th><th>ชื่อภาระงาน</th><th>จำนวน (บาท)</th><th>สถานะ</th><th>การดำเนินการ</th></tr></thead>
         <tbody id="exec-tbody"></tbody>
       </table>
-
-      <br/>
-      <div class="btn-row">
-        <button class="btn btn-danger btn-sm" id="terminate-btn" data-testid="terminate-btn">Terminate Contract</button>
-        <span id="terminate-status" style="font-size:13px;color:#d63031;display:none">Contract terminated.</span>
+      <hr class="divider"/>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-danger btn-sm" id="terminate-btn" data-testid="terminate-btn">ยุติสัญญา</button>
+        <span id="terminate-status" class="hidden" style="font-size:11px;color:#6b7280">สัญญาถูกยุติแล้ว</span>
       </div>
     </div>
-  </div>
 
-</div>
+  </div><!-- mbody -->
+</div><!-- modal -->
+</div><!-- modal-wrap -->
 
 <script>
-  let quotationId = null;
-  let milestoneCount = 0;
-  let quotationData = null;
+let quotationId = null, milestoneCount = 0, rawTotal = 0;
+const $ = id => document.getElementById(id);
+const fmt2 = n => Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtI = n => Number(n).toLocaleString('th-TH');
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
-  function showSection(id) {
-    ['section-create','section-review','section-payment','section-execution']
-      .forEach(s => document.getElementById(s).classList.toggle('section-hidden', s !== id));
+function showSection(id) {
+  ['section-create','section-review','section-sent','section-payment','section-execution']
+    .forEach(s => $(s).classList.toggle('hidden', s !== id));
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = $(`step-${i}`), dot = el.querySelector('.sdot');
+    el.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+    dot.textContent = i < n ? '✓' : String(i);
   }
-
-  function setStep(n) {
-    for (let i = 1; i <= 4; i++) {
-      const el = document.getElementById(`step-${i}`);
-      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
-    }
+  for (let i = 1; i <= 3; i++) {
+    const c = $(`conn-${i}`);
+    if (c) c.className = 'sconn' + (i < n ? ' done' : '');
   }
+}
 
-  function showAlert(id, msg, show = true) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.classList.toggle('show', show);
+function showAlert(id, msg, show = true) {
+  const el = $(id); if (!el) return;
+  el.textContent = msg; el.classList.toggle('show', show);
+}
+function clearAlert(id) { showAlert(id, '', false); }
+
+function updateTotal() {
+  let sub = 0;
+  for (let i = 1; i <= milestoneCount; i++) {
+    const el = $(`m${i}-amount`); if (el) sub += parseFloat(el.value) || 0;
   }
+  rawTotal = sub;
+  const vat = sub * 0.07, grand = sub + vat;
+  if ($('total-amount')) $('total-amount').textContent = fmtI(Math.round(sub));
+  if ($('vat-amount')) $('vat-amount').textContent = fmt2(vat);
+  if ($('grand-total')) $('grand-total').textContent = fmt2(grand);
+  const d = $('total-display'); if (d) d.classList.toggle('hidden', sub === 0);
+  $('add-round-btn').style.display = milestoneCount >= 5 ? 'none' : 'block';
+}
 
-  function clearAlert(id) { showAlert(id, '', false); }
+function addMilestone() {
+  if (milestoneCount >= 5) { showAlert('create-error', 'สามารถเพิ่มได้สูงสุด 5 งวดเท่านั้น'); return; }
+  milestoneCount++;
+  const idx = milestoneCount;
+  const d1 = new Date(); d1.setDate(d1.getDate() + (idx-1)*30+1);
+  const d2 = new Date(); d2.setDate(d2.getDate() + idx*30);
+  const fd = d => d.toISOString().split('T')[0];
+  const b = document.createElement('div');
+  b.className = 'mblock'; b.id = `milestone-${idx}`; b.dataset.testid = `milestone-block-${idx}`;
+  b.innerHTML = `
+    <div class="mhd"><div class="rbadge">${idx}</div>ภาระงาน งวดที่ ${idx}</div>
+    <div class="fg"><label>ชื่อภาระงาน *</label>
+      <input id="m${idx}-title" data-testid="m${idx}-title" placeholder="เช่น ออกแบบ UI/UX"/></div>
+    <div class="r2">
+      <div class="fg" style="margin-bottom:0"><label>จำนวนเงิน (บาท) *</label>
+        <input type="number" id="m${idx}-amount" data-testid="m${idx}-amount" placeholder="เช่น 1500" min="101" oninput="updateTotal()"/></div>
+      <div class="fg" style="margin-bottom:0"><label>สิ่งที่ส่งมอบ *</label>
+        <input id="m${idx}-deliverables" data-testid="m${idx}-deliverables" placeholder="เช่น ไฟล์ Figma"/></div>
+    </div>
+    <div class="r2" style="margin-top:8px">
+      <div class="fg" style="margin-bottom:0"><label>วันเริ่มต้น</label>
+        <input type="date" id="m${idx}-start-date" data-testid="m${idx}-start-date" value="${fd(d1)}"/></div>
+      <div class="fg" style="margin-bottom:0"><label>วันสิ้นสุด *</label>
+        <input type="date" id="m${idx}-due-date" data-testid="m${idx}-due-date" value="${fd(d2)}"/></div>
+    </div>
+    <div class="fg" style="margin-top:8px"><label>รายละเอียดงาน *</label>
+      <textarea id="m${idx}-description" data-testid="m${idx}-description" placeholder="อธิบายงานที่ต้องทำในงวดนี้"></textarea></div>`;
+  $('milestones-container').appendChild(b);
+  updateTotal();
+}
 
-  function formatCard(val) {
-    return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  }
+$('add-round-btn').addEventListener('click', addMilestone);
+addMilestone(); addMilestone();
 
-  // ─── Milestone builder ───────────────────────────────────────────────────
-  function addMilestone() {
-    const milestones = document.getElementById('milestones-container');
-    if (milestoneCount >= 5) {
-      showAlert('create-error', 'Maximum 5 milestone rounds allowed.');
-      return;
-    }
-    milestoneCount++;
-    const idx = milestoneCount;
-
-    const block = document.createElement('div');
-    block.className = 'milestone-block';
-    block.id = `milestone-${idx}`;
-    block.dataset.testid = `milestone-block-${idx}`;
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + idx * 30);
-    const dateStr = tomorrow.toISOString().split('T')[0];
-
-    block.innerHTML = `
-      <h3><span class="badge">${idx}</span> Milestone Round ${idx}</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Title *</label>
-          <input type="text" id="m${idx}-title" data-testid="m${idx}-title" placeholder="e.g. Design Phase" />
-          <span class="field-error" id="m${idx}-title-err">Title is required</span>
-        </div>
-        <div class="form-group">
-          <label>Amount (THB) *</label>
-          <input type="number" id="m${idx}-amount" data-testid="m${idx}-amount"
-            placeholder="e.g. 1500" min="101" oninput="updateTotal()" />
-          <span class="field-error" id="m${idx}-amount-err">Must be > 100 THB</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Description *</label>
-        <textarea id="m${idx}-description" data-testid="m${idx}-description"
-          placeholder="Describe what will be done in this round"></textarea>
-        <span class="field-error" id="m${idx}-description-err">Description is required</span>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Deliverables *</label>
-          <input type="text" id="m${idx}-deliverables" data-testid="m${idx}-deliverables"
-            placeholder="e.g. Figma mockups" />
-          <span class="field-error" id="m${idx}-deliverables-err">Deliverables is required</span>
-        </div>
-        <div class="form-group">
-          <label>Due Date *</label>
-          <input type="date" id="m${idx}-due-date" data-testid="m${idx}-due-date" value="${dateStr}" />
-          <span class="field-error" id="m${idx}-due-date-err">Must be a future date</span>
-        </div>
-      </div>
-    `;
-    milestones.appendChild(block);
-    updateTotal();
-    updateAddBtn();
-  }
-
-  function updateTotal() {
-    let total = 0;
-    for (let i = 1; i <= milestoneCount; i++) {
-      const el = document.getElementById(`m${i}-amount`);
-      if (el) total += parseFloat(el.value) || 0;
-    }
-    const disp = document.getElementById('total-display');
-    disp.style.display = milestoneCount > 0 ? 'block' : 'none';
-    document.getElementById('total-amount').textContent = total.toLocaleString();
-  }
-
-  function updateAddBtn() {
-    document.getElementById('add-round-btn').style.display =
-      milestoneCount >= 5 ? 'none' : 'block';
-  }
-
-  document.getElementById('add-round-btn').addEventListener('click', addMilestone);
-
-  // Start with 2 rounds (minimum)
-  addMilestone();
-  addMilestone();
-
-  // ─── Step 1: Submit Quotation ─────────────────────────────────────────────
-  document.getElementById('submit-quotation-btn').addEventListener('click', async () => {
-    clearAlert('create-error');
-
-    if (milestoneCount < 2) {
-      showAlert('create-error', 'You must have at least 2 milestone rounds.');
-      return;
-    }
-
-    const milestones = [];
-    for (let i = 1; i <= milestoneCount; i++) {
-      milestones.push({
-        title: document.getElementById(`m${i}-title`)?.value?.trim(),
-        description: document.getElementById(`m${i}-description`)?.value?.trim(),
-        deliverables: document.getElementById(`m${i}-deliverables`)?.value?.trim(),
-        due_date: document.getElementById(`m${i}-due-date`)?.value,
-        amount: parseFloat(document.getElementById(`m${i}-amount`)?.value) || 0,
-      });
-    }
-
-    const body = {
-      seller_id: document.getElementById('seller-id').value.trim(),
-      buyer_id: document.getElementById('buyer-id').value.trim(),
-      milestones,
-    };
-
-    const btn = document.getElementById('submit-quotation-btn');
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
-
-    try {
-      const res = await fetch('/api/v1/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        const msg = data.details ? data.details.join('\n') : data.error;
-        showAlert('create-error', msg);
-        return;
-      }
-
-      quotationId = data.quotation_id;
-      quotationData = body;
-
-      // Populate review table
-      const tbody = document.getElementById('review-tbody');
-      tbody.innerHTML = '';
-      milestones.forEach((m, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${m.title}</td><td>${m.deliverables}</td><td>${m.due_date}</td><td>${m.amount.toLocaleString()}</td>`;
-        tbody.appendChild(tr);
-      });
-      document.getElementById('review-total').textContent = data.total_amount.toLocaleString();
-      document.getElementById('pay-amount-display').textContent = data.total_amount.toLocaleString();
-
-      showSection('section-review');
-      setStep(2);
-    } catch (e) {
-      showAlert('create-error', 'Network error. Is the mock server running?');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Submit Quotation';
-    }
-  });
-
-  // ─── Step 2: Accept Quotation ─────────────────────────────────────────────
-  document.getElementById('accept-btn').addEventListener('click', async () => {
-    clearAlert('accept-error');
-    const btn = document.getElementById('accept-btn');
-    btn.disabled = true;
-    btn.textContent = 'Accepting...';
-
-    try {
-      const res = await fetch(`/api/v1/quotations/${quotationId}/accept`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { showAlert('accept-error', data.error); return; }
-
-      showSection('section-payment');
-      setStep(3);
-    } catch (e) {
-      showAlert('accept-error', 'Network error.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Accept Quotation';
-    }
-  });
-
-  document.getElementById('back-to-create-btn').addEventListener('click', () => {
-    showSection('section-create');
-    setStep(1);
-  });
-
-  // ─── Card number auto-format ───────────────────────────────────────────────
-  document.getElementById('card-number').addEventListener('input', function () {
-    this.value = formatCard(this.value);
-  });
-
-  // ─── Step 3: Payment ──────────────────────────────────────────────────────
-  document.getElementById('pay-btn').addEventListener('click', async () => {
-    clearAlert('payment-error');
-    clearAlert('payment-success');
-
-    const cardRaw = document.getElementById('card-number').value.replace(/\s/g, '');
-    const expiry = document.getElementById('card-expiry').value.trim();
-    const cvv = document.getElementById('card-cvv').value.trim();
-    const currency = document.getElementById('currency').value;
-    const amount = parseFloat(document.getElementById('pay-amount-display').textContent.replace(/,/g, ''));
-
-    let valid = true;
-
-    if (!/^\d{16}$/.test(cardRaw)) {
-      document.getElementById('card-number-error').classList.add('show');
-      document.getElementById('card-number').classList.add('error');
-      valid = false;
-    } else {
-      document.getElementById('card-number-error').classList.remove('show');
-      document.getElementById('card-number').classList.remove('error');
-    }
-
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
-      document.getElementById('card-expiry-error').classList.add('show');
-      document.getElementById('card-expiry').classList.add('error');
-      valid = false;
-    } else {
-      document.getElementById('card-expiry-error').classList.remove('show');
-      document.getElementById('card-expiry').classList.remove('error');
-    }
-
-    if (!/^\d{3,4}$/.test(cvv)) {
-      document.getElementById('card-cvv-error').classList.add('show');
-      document.getElementById('card-cvv').classList.add('error');
-      valid = false;
-    } else {
-      document.getElementById('card-cvv-error').classList.remove('show');
-      document.getElementById('card-cvv').classList.remove('error');
-    }
-
-    if (!valid) return;
-
-    const btn = document.getElementById('pay-btn');
-    btn.disabled = true;
-    btn.textContent = 'Processing...';
-
-    try {
-      const idempotencyKey = `pay-${quotationId}-${Date.now()}`;
-      const res = await fetch('/api/v1/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quotation_id: quotationId,
-          card_number: cardRaw,
-          card_expiry: expiry,
-          card_cvv: cvv,
-          amount,
-          currency,
-          idempotency_key: idempotencyKey,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        showAlert('payment-error', data.error);
-        return;
-      }
-
-      showAlert('payment-success',
-        `Payment successful! ID: ${data.payment_id} | Card: ${data.masked_card}`);
-
-      setTimeout(() => {
-        buildExecutionTable();
-        showSection('section-execution');
-        setStep(4);
-      }, 1500);
-    } catch (e) {
-      showAlert('payment-error', 'Network error.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Pay Now';
-    }
-  });
-
-  // ─── Step 4: Milestone Execution ──────────────────────────────────────────
-  function buildExecutionTable() {
-    const tbody = document.getElementById('exec-tbody');
-    tbody.innerHTML = '';
-    for (let i = 1; i <= milestoneCount; i++) {
-      const title = document.getElementById(`m${i}-title`)?.value?.trim();
-      const amount = document.getElementById(`m${i}-amount`)?.value;
+// Step 1
+$('submit-quotation-btn').addEventListener('click', async () => {
+  clearAlert('create-error');
+  if (milestoneCount < 2) { showAlert('create-error', 'ต้องมีอย่างน้อย 2 งวดงาน'); return; }
+  const milestones = Array.from({length: milestoneCount}, (_,i) => ({
+    title: $(`m${i+1}-title`)?.value?.trim()||'',
+    description: $(`m${i+1}-description`)?.value?.trim()||'',
+    deliverables: $(`m${i+1}-deliverables`)?.value?.trim()||'',
+    due_date: $(`m${i+1}-due-date`)?.value||'',
+    amount: parseFloat($(`m${i+1}-amount`)?.value)||0,
+  }));
+  const btn = $('submit-quotation-btn'); btn.disabled = true; btn.textContent = 'กำลังส่ง...';
+  try {
+    const res = await fetch('/api/v1/quotations', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({seller_id:$('seller-id').value.trim(), buyer_id:$('buyer-id').value.trim(), milestones}),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('create-error', data.details ? data.details.join('\n') : data.error); return; }
+    quotationId = data.quotation_id;
+    $('order-id-display').textContent = `Order ID: ${quotationId}`;
+    // populate review
+    const tbody = $('review-tbody'); tbody.innerHTML = '';
+    milestones.forEach((m,i) => {
       const tr = document.createElement('tr');
-      tr.id = `exec-row-${i}`;
-      tr.dataset.testid = `exec-row-${i}`;
-      tr.innerHTML = `
-        <td>${i}</td>
-        <td>${title}</td>
-        <td>${parseFloat(amount).toLocaleString()}</td>
-        <td><span class="status-badge status-pending" id="exec-status-${i}" data-testid="exec-status-${i}">pending</span></td>
-        <td>
-          <div class="milestone-action">
-            <button class="btn btn-primary btn-sm" id="submit-work-${i}" data-testid="submit-work-${i}"
-              onclick="submitWork(${i})">Submit Work</button>
-            <button class="btn btn-success btn-sm" id="accept-work-${i}" data-testid="accept-work-${i}"
-              onclick="acceptWork(${i})" disabled>Accept</button>
-          </div>
-        </td>
-      `;
+      tr.innerHTML = `<td>${i+1}</td><td>${m.title}</td><td>${m.deliverables}</td><td>${m.due_date}</td><td>${fmtI(m.amount)}</td>`;
       tbody.appendChild(tr);
-    }
+    });
+    const sub = data.total_amount, vat = sub*0.07, grand = sub+vat;
+    $('review-subtotal').textContent = fmtI(sub);
+    $('review-vat').textContent = fmt2(vat);
+    $('review-total').textContent = fmt2(grand);
+    $('first-round-amt').textContent = fmtI(milestones[0].amount);
+    $('pay-amount-display').textContent = fmtI(sub);
+    $('pay-amount-th').textContent = fmt2(grand);
+    showSection('section-review'); setStep(2);
+  } catch { showAlert('create-error', 'เกิดข้อผิดพลาด กรุณาตรวจสอบการเชื่อมต่อ'); }
+  finally { btn.disabled = false; btn.textContent = 'ส่งใบเสนอราคา'; }
+});
+
+// Step 2
+$('accept-btn').addEventListener('click', async () => {
+  clearAlert('accept-error');
+  const btn = $('accept-btn'); btn.disabled = true; btn.textContent = 'กำลังยืนยัน...';
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/accept`, {method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { showAlert('accept-error', data.error); return; }
+    showSection('section-sent');
+    setTimeout(() => { buildPaySummary(); showSection('section-payment'); setStep(3); }, 1800);
+  } catch { showAlert('accept-error', 'เกิดข้อผิดพลาด กรุณาลองใหม่'); }
+  finally { btn.disabled = false; btn.textContent = 'ยืนยัน'; }
+});
+
+$('back-to-create-btn').addEventListener('click', () => { showSection('section-create'); setStep(1); });
+
+function buildPaySummary() {
+  let html = '';
+  for (let i = 1; i <= milestoneCount; i++) {
+    const amt = parseFloat($(`m${i}-amount`)?.value)||0;
+    const base = amt/1.07, vat = amt-base;
+    html += `<div class="vrow sub"><span>ราคาอ้างอิง งวดที่ ${i}</span><span>${fmt2(base)} บาท</span></div>`;
+    html += `<div class="vrow sub" style="padding-left:12px;font-size:11px"><span>ภาษีมูลค่าเพิ่ม 7%</span><span>${fmt2(vat)} บาท</span></div>`;
+    html += `<div class="vrow" style="font-weight:600"><span>ราคาชำระสุทธิ งวดที่ ${i}</span><span>${fmt2(amt)} บาท</span></div>`;
+    if (i < milestoneCount) html += `<hr style="border:none;border-top:1px solid #e5e7eb;margin:5px 0">`;
   }
+  const grand = rawTotal + rawTotal*0.07;
+  html += `<div class="vrow hl"><span>ยอดรวมทั้งหมด</span><span>${fmt2(grand)} บาท</span></div>`;
+  $('pay-round-summary').innerHTML = html;
+}
 
-  async function submitWork(round) {
-    clearAlert('exec-error');
-    const btn = document.getElementById(`submit-work-${round}`);
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
+function swTab(el) { document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
 
-    try {
-      const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/submit`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { showAlert('exec-error', data.error); btn.disabled = false; btn.textContent = 'Submit Work'; return; }
+$('card-number').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+});
 
-      setMilestoneStatus(round, 'submitted');
-      btn.textContent = 'Submitted';
-      document.getElementById(`accept-work-${round}`).disabled = false;
-    } catch (e) {
-      showAlert('exec-error', 'Network error.');
-      btn.disabled = false;
-      btn.textContent = 'Submit Work';
-    }
+// Step 3
+$('pay-btn').addEventListener('click', async () => {
+  clearAlert('payment-error'); clearAlert('payment-success');
+  const cardRaw = $('card-number').value.replace(/\s/g,'');
+  const expiry = $('card-expiry').value.trim(), cvv = $('card-cvv').value.trim();
+  let valid = true;
+  const se = (id, bad) => { $(id).classList.toggle('show', bad); const inp = $(id.replace('-error','')); if(inp) inp.classList.toggle('err', bad); if(bad) valid=false; };
+  se('card-number-error', !/^\d{16}$/.test(cardRaw));
+  se('card-expiry-error', !/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry));
+  se('card-cvv-error', !/^\d{3,4}$/.test(cvv));
+  if (!valid) return;
+  const btn = $('pay-btn'); btn.disabled = true; btn.textContent = 'กำลังดำเนินการ...';
+  try {
+    const amount = rawTotal;
+    const res = await fetch('/api/v1/payments', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        quotation_id: quotationId, card_number: cardRaw, card_expiry: expiry,
+        card_cvv: cvv, amount, currency: $('currency').value,
+        idempotency_key: `pay-${quotationId}-${Date.now()}`,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('payment-error', data.error); return; }
+    showAlert('payment-success', `✓ ชำระเงินสำเร็จ! รหัส: ${data.payment_id} | บัตร: ${data.masked_card}`);
+    setTimeout(() => { buildExecTable(); showSection('section-execution'); setStep(4); }, 1800);
+  } catch { showAlert('payment-error', 'เกิดข้อผิดพลาด กรุณาลองใหม่'); }
+  finally { btn.disabled = false; btn.textContent = `ชำระจำนวน ${$('pay-amount-th').textContent} บาท`; }
+});
+
+// Step 4
+const STATUS_TH = { pending:'รอดำเนินการ', submitted:'ส่งงานแล้ว', accepted:'ยอมรับแล้ว', transferred:'โอนเงินแล้ว', rejected:'ปฏิเสธแล้ว' };
+const STATUS_CLS = { pending:'status-pending', submitted:'status-submitted', accepted:'status-accepted', transferred:'status-transferred', rejected:'status-rejected' };
+
+function setStatus(round, key) {
+  const badge = $(`exec-status-${round}`);
+  badge.textContent = key; // English for Playwright tests
+  badge.className = `sbadge ${STATUS_CLS[key]||'status-pending'}`;
+  badge.title = STATUS_TH[key]||key;
+}
+
+function buildExecTable() {
+  const tbody = $('exec-tbody'); tbody.innerHTML = '';
+  for (let i = 1; i <= milestoneCount; i++) {
+    const title = $(`m${i}-title`)?.value?.trim()||`งวดที่ ${i}`;
+    const amt = parseFloat($(`m${i}-amount`)?.value)||0;
+    const tr = document.createElement('tr');
+    tr.id = `exec-row-${i}`; tr.dataset.testid = `exec-row-${i}`;
+    tr.innerHTML = `
+      <td>${i}</td><td style="max-width:120px">${title}</td><td>${fmtI(amt)}</td>
+      <td><span class="sbadge status-pending" id="exec-status-${i}" data-testid="exec-status-${i}">pending</span></td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="submit-work-${i}" data-testid="submit-work-${i}" onclick="doSubmit(${i})">ส่งงาน</button>
+          <button class="btn btn-success btn-sm" id="accept-work-${i}" data-testid="accept-work-${i}" onclick="doAccept(${i})" disabled>ยอมรับ</button>
+          <button class="btn btn-outline btn-sm" id="reject-work-${i}" data-testid="reject-work-${i}" onclick="doReject(${i})" disabled>ปฏิเสธ</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
   }
+}
 
-  async function acceptWork(round) {
-    clearAlert('exec-error');
-    const btn = document.getElementById(`accept-work-${round}`);
-    btn.disabled = true;
-    btn.textContent = 'Accepting...';
+async function doSubmit(round) {
+  clearAlert('exec-error');
+  const btn = $(`submit-work-${round}`); btn.disabled=true; btn.textContent='กำลังส่ง...';
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/submit`,{method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { showAlert('exec-error', data.error); btn.disabled=false; btn.textContent='ส่งงาน'; return; }
+    setStatus(round,'submitted'); btn.textContent='ส่งแล้ว';
+    $(`accept-work-${round}`).disabled=false; $(`reject-work-${round}`).disabled=false;
+  } catch { showAlert('exec-error','เกิดข้อผิดพลาด'); btn.disabled=false; btn.textContent='ส่งงาน'; }
+}
 
-    try {
-      const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/accept`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { showAlert('exec-error', data.error); btn.disabled = false; btn.textContent = 'Accept'; return; }
+async function doAccept(round) {
+  clearAlert('exec-error');
+  const btn = $(`accept-work-${round}`); btn.disabled=true; btn.textContent='กำลังยืนยัน...';
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/accept`,{method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { showAlert('exec-error', data.error); btn.disabled=false; btn.textContent='ยอมรับ'; return; }
+    setStatus(round,'transferred'); btn.textContent='โอนแล้ว'; $(`reject-work-${round}`).disabled=true;
+  } catch { showAlert('exec-error','เกิดข้อผิดพลาด'); btn.disabled=false; btn.textContent='ยอมรับ'; }
+}
 
-      setMilestoneStatus(round, 'transferred');
-      btn.textContent = 'Transferred';
-    } catch (e) {
-      showAlert('exec-error', 'Network error.');
-      btn.disabled = false;
-      btn.textContent = 'Accept';
-    }
-  }
+async function doReject(round) {
+  clearAlert('exec-error');
+  const btn = $(`reject-work-${round}`); btn.disabled=true; btn.textContent='กำลังปฏิเสธ...';
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/reject`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({reason:'ไม่ตรงตามข้อกำหนด'}),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('exec-error', data.error); btn.disabled=false; btn.textContent='ปฏิเสธ'; return; }
+    setStatus(round,'pending');
+    $(`submit-work-${round}`).disabled=false; $(`submit-work-${round}`).textContent='ส่งงาน';
+    $(`accept-work-${round}`).disabled=true; btn.textContent='ปฏิเสธแล้ว';
+    showAlert('exec-error',`งวดที่ ${round} ถูกปฏิเสธ — กรุณาแก้ไขและส่งงานใหม่`);
+    $('exec-error').className='alert alert-warning show';
+  } catch { showAlert('exec-error','เกิดข้อผิดพลาด'); btn.disabled=false; btn.textContent='ปฏิเสธ'; }
+}
 
-  function setMilestoneStatus(round, status) {
-    const badge = document.getElementById(`exec-status-${round}`);
-    badge.className = `status-badge status-${status}`;
-    badge.textContent = status;
-  }
-
-  // ─── Terminate ────────────────────────────────────────────────────────────
-  document.getElementById('terminate-btn').addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to terminate this contract?')) return;
-    clearAlert('exec-error');
-
-    try {
-      const res = await fetch(`/api/v1/quotations/${quotationId}/terminate`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { showAlert('exec-error', data.error); return; }
-
-      document.getElementById('terminate-btn').disabled = true;
-      document.getElementById('terminate-status').style.display = 'inline';
-      document.querySelectorAll('[id^="submit-work-"], [id^="accept-work-"]')
-        .forEach(btn => btn.disabled = true);
-
-      showAlert('exec-error',
-        `Contract terminated. Completed rounds: ${data.completed_rounds}/${data.completed_rounds + data.remaining_rounds}.`);
-      document.getElementById('exec-error').className = 'alert alert-info show';
-    } catch (e) {
-      showAlert('exec-error', 'Network error.');
-    }
-  });
+$('terminate-btn').addEventListener('click', async () => {
+  if (!confirm('คุณต้องการยุติสัญญานี้ใช่หรือไม่?')) return;
+  clearAlert('exec-error');
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/terminate`,{method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { showAlert('exec-error', data.error); return; }
+    $('terminate-btn').disabled=true; $('terminate-status').classList.remove('hidden');
+    document.querySelectorAll('[id^="submit-work-"],[id^="accept-work-"],[id^="reject-work-"]').forEach(b=>b.disabled=true);
+    showAlert('exec-error',`สัญญาถูกยุติแล้ว — ดำเนินการครบ ${data.completed_rounds} งวด / ยังเหลือ ${data.remaining_rounds} งวด`);
+    $('exec-error').className='alert alert-info show';
+  } catch { showAlert('exec-error','เกิดข้อผิดพลาด'); }
+});
 </script>
 </body>
 </html>
