@@ -8,14 +8,7 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@pages/*": ["automation/pages/*"],
-      "@utils/*": ["automation/utils/*"],
-      "@fixtures/*": ["automation/fixtures/*"]
-    }
+    "resolveJsonModule": true
   },
   "include": [
     "playwright.config.ts",
