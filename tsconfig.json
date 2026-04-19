@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@pages/*": ["automation/pages/*"],
+      "@utils/*": ["automation/utils/*"],
+      "@fixtures/*": ["automation/fixtures/*"]
+    }
+  },
+  "include": ["automation/**/*"],
+  "exclude": ["node_modules", "dist", "test-results", "playwright-report"]
+}
