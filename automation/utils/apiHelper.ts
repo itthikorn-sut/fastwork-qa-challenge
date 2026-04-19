@@ -1,0 +1,39 @@
+import { APIRequestContext } from '@playwright/test';
+import { buildQuotationPayload, VALID_CARD } from '../fixtures/testData';
+
+export async function createQuotation(request: APIRequestContext, overrides?: object) {
+  const payload = overrides ?? buildQuotationPayload();
+  const res = await request.post('/api/v1/quotations', { data: payload });
+  return { res, data: await res.json() };
+}
+
+export async function createAndAcceptQuotation(
+  request: APIRequestContext,
+  rounds = 3,
+  amountPerRound = 1600,
+): Promise<{ quotationId: string; totalAmount: number }> {
+  const { data } = await createQuotation(request, buildQuotationPayload(rounds, amountPerRound));
+  await request.post(`/api/v1/quotations/${data.quotation_id}/accept`);
+  return { quotationId: data.quotation_id, totalAmount: data.total_amount };
+}
+
+export async function createAcceptAndPay(
+  request: APIRequestContext,
+  rounds = 3,
+  amountPerRound = 1600,
+): Promise<{ quotationId: string; totalAmount: number; paymentId: string }> {
+  const { quotationId, totalAmount } = await createAndAcceptQuotation(request, rounds, amountPerRound);
+  const payRes = await request.post('/api/v1/payments', {
+    data: {
+      quotation_id: quotationId,
+      card_number: VALID_CARD.number,
+      card_expiry: VALID_CARD.expiry,
+      card_cvv: VALID_CARD.cvv,
+      amount: totalAmount,
+      currency: 'THB',
+      idempotency_key: `setup-${quotationId}`,
+    },
+  });
+  const payData = await payRes.json();
+  return { quotationId, totalAmount, paymentId: payData.payment_id };
+}

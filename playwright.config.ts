@@ -22,9 +22,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'ts-node automation/utils/mockServer.ts',
+    command: 'npx ts-node --transpile-only -r tsconfig-paths/register automation/utils/mockServer.ts',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 10000,
+    timeout: 15000,
   },
 });
