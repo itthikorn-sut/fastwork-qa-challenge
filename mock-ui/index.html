@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fastwork - Milestone Quotation & Payment</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; color: #2d3436; }
+
+    header {
+      background: #6c5ce7; color: white;
+      padding: 16px 32px; display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 20px; font-weight: 600; }
+
+    .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+
+    .step-bar {
+      display: flex; gap: 0; margin-bottom: 32px;
+      border-radius: 8px; overflow: hidden; border: 1px solid #dfe6e9;
+    }
+    .step {
+      flex: 1; padding: 12px 8px; text-align: center; font-size: 13px;
+      background: #fff; color: #b2bec3; border-right: 1px solid #dfe6e9;
+      cursor: default; transition: all .2s;
+    }
+    .step:last-child { border-right: none; }
+    .step.active { background: #6c5ce7; color: white; font-weight: 600; }
+    .step.done { background: #00b894; color: white; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08); padding: 28px; margin-bottom: 20px;
+    }
+    .card h2 { font-size: 18px; margin-bottom: 20px; color: #6c5ce7; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    label { font-size: 13px; font-weight: 600; color: #636e72; }
+    input, textarea, select {
+      padding: 10px 12px; border: 1.5px solid #dfe6e9; border-radius: 8px;
+      font-size: 14px; transition: border-color .2s; font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: #6c5ce7;
+    }
+    input.error, textarea.error { border-color: #d63031; }
+    .field-error { font-size: 12px; color: #d63031; margin-top: 2px; display: none; }
+    .field-error.show { display: block; }
+    textarea { resize: vertical; min-height: 72px; }
+
+    .milestone-block {
+      border: 1.5px solid #dfe6e9; border-radius: 10px;
+      padding: 20px; margin-bottom: 16px; position: relative;
+    }
+    .milestone-block h3 {
+      font-size: 14px; font-weight: 700; margin-bottom: 16px;
+      color: #6c5ce7; display: flex; align-items: center; gap: 8px;
+    }
+    .badge {
+      background: #6c5ce7; color: white; border-radius: 50%;
+      width: 24px; height: 24px; display: inline-flex;
+      align-items: center; justify-content: center; font-size: 12px;
+    }
+
+    .btn {
+      padding: 11px 24px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .btn-primary { background: #6c5ce7; color: white; }
+    .btn-primary:hover { background: #5a4fd6; }
+    .btn-primary:disabled { background: #b2bec3; cursor: not-allowed; }
+    .btn-success { background: #00b894; color: white; }
+    .btn-success:hover { background: #009d7d; }
+    .btn-danger { background: #d63031; color: white; }
+    .btn-danger:hover { background: #b71c1c; }
+    .btn-secondary { background: #dfe6e9; color: #636e72; }
+    .btn-secondary:hover { background: #ccc; }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+    .btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 14px;
+      margin-bottom: 16px; display: none;
+    }
+    .alert.show { display: block; }
+    .alert-error { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
+    .alert-success { background: #f0fff4; border: 1px solid #9ae6b4; color: #276749; }
+    .alert-info { background: #ebf8ff; border: 1px solid #90cdf4; color: #2b6cb0; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .summary-table th, .summary-table td {
+      padding: 10px 14px; text-align: left; border-bottom: 1px solid #dfe6e9;
+    }
+    .summary-table th { background: #f8f9fa; font-weight: 600; color: #636e72; }
+    .summary-table .total-row td { font-weight: 700; color: #6c5ce7; }
+
+    .status-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+    }
+    .status-pending { background: #ffeaa7; color: #856404; }
+    .status-submitted { background: #74b9ff; color: #1a5276; }
+    .status-accepted { background: #55efc4; color: #1b4332; }
+    .status-transferred { background: #00b894; color: white; }
+    .status-terminated { background: #d63031; color: white; }
+
+    .payment-card { max-width: 420px; }
+    .card-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .section-hidden { display: none; }
+
+    .add-round-btn {
+      border: 2px dashed #dfe6e9; background: none; color: #b2bec3;
+      width: 100%; padding: 12px; border-radius: 10px; font-size: 14px;
+      cursor: pointer; transition: all .2s;
+    }
+    .add-round-btn:hover { border-color: #6c5ce7; color: #6c5ce7; }
+
+    .milestone-action { display: flex; gap: 8px; margin-top: 12px; }
+
+    #total-display {
+      font-size: 16px; font-weight: 700; color: #6c5ce7;
+      padding: 12px; background: #f0eeff; border-radius: 8px; text-align: center;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+  </svg>
+  <h1>Fastwork — Milestone Quotation & Payment</h1>
+</header>
+
+<div class="container">
+
+  <!-- Step Indicator -->
+  <div class="step-bar">
+    <div class="step active" id="step-1">1. Create Quotation</div>
+    <div class="step" id="step-2">2. Review & Accept</div>
+    <div class="step" id="step-3">3. Payment</div>
+    <div class="step" id="step-4">4. Milestone Execution</div>
+  </div>
+
+  <!-- STEP 1: Create Quotation -->
+  <div id="section-create">
+    <div class="card">
+      <h2>Create Milestone Quotation</h2>
+
+      <div class="alert alert-error" id="create-error"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Seller ID</label>
+          <input type="text" id="seller-id" value="SELLER-001" data-testid="seller-id" />
+        </div>
+        <div class="form-group">
+          <label>Buyer ID</label>
+          <input type="text" id="buyer-id" value="BUYER-001" data-testid="buyer-id" />
+        </div>
+      </div>
+
+      <div id="milestones-container"></div>
+
+      <button class="add-round-btn" id="add-round-btn" data-testid="add-round-btn">+ Add Milestone Round</button>
+
+      <div id="total-display" style="display:none">Total: <span id="total-amount">0</span> THB</div>
+
+      <br/>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="submit-quotation-btn" data-testid="submit-quotation-btn">Submit Quotation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Review & Accept -->
+  <div id="section-review" class="section-hidden">
+    <div class="card">
+      <h2>Review Quotation</h2>
+      <div class="alert alert-info show" id="review-info">Buyer is reviewing the quotation below.</div>
+
+      <table class="summary-table" id="review-table">
+        <thead>
+          <tr><th>Round</th><th>Title</th><th>Deliverables</th><th>Due Date</th><th>Amount (THB)</th></tr>
+        </thead>
+        <tbody id="review-tbody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="4">Total</td>
+            <td id="review-total"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <br/>
+      <div class="alert alert-error" id="accept-error"></div>
+      <div class="btn-row">
+        <button class="btn btn-success" id="accept-btn" data-testid="accept-btn">Accept Quotation</button>
+        <button class="btn btn-secondary" id="back-to-create-btn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Payment -->
+  <div id="section-payment" class="section-hidden">
+    <div class="card payment-card">
+      <h2>Payment</h2>
+
+      <div class="alert alert-success" id="payment-amount-info show" style="display:block; margin-bottom:16px;">
+        Amount to pay: <strong id="pay-amount-display"></strong> THB
+      </div>
+
+      <div class="alert alert-error" id="payment-error"></div>
+      <div class="alert alert-success" id="payment-success"></div>
+
+      <div class="form-group">
+        <label>Card Number</label>
+        <input type="text" id="card-number" placeholder="1234 5678 9012 3456"
+          maxlength="19" data-testid="card-number" />
+        <span class="field-error" id="card-number-error">Must be 16 digits</span>
+      </div>
+
+      <div class="card-input-row">
+        <div class="form-group">
+          <label>Expiry (MM/YY)</label>
+          <input type="text" id="card-expiry" placeholder="12/28" maxlength="5" data-testid="card-expiry" />
+          <span class="field-error" id="card-expiry-error">Use MM/YY format</span>
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" id="card-cvv" placeholder="123" maxlength="4" data-testid="card-cvv" />
+          <span class="field-error" id="card-cvv-error">Must be 3-4 digits</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Currency</label>
+        <select id="currency" data-testid="currency">
+          <option value="THB">THB — Thai Baht</option>
+          <option value="USD">USD — US Dollar</option>
+          <option value="EUR">EUR — Euro</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="pay-btn" data-testid="pay-btn">Pay Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Milestone Execution -->
+  <div id="section-execution" class="section-hidden">
+    <div class="card">
+      <h2>Milestone Execution</h2>
+
+      <div class="alert alert-success show" id="exec-info">
+        Payment confirmed. Seller can now submit work per milestone round.
+      </div>
+      <div class="alert alert-error" id="exec-error"></div>
+
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Round</th><th>Title</th><th>Amount (THB)</th>
+            <th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="exec-tbody"></tbody>
+      </table>
+
+      <br/>
+      <div class="btn-row">
+        <button class="btn btn-danger btn-sm" id="terminate-btn" data-testid="terminate-btn">Terminate Contract</button>
+        <span id="terminate-status" style="font-size:13px;color:#d63031;display:none">Contract terminated.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let quotationId = null;
+  let milestoneCount = 0;
+  let quotationData = null;
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  function showSection(id) {
+    ['section-create','section-review','section-payment','section-execution']
+      .forEach(s => document.getElementById(s).classList.toggle('section-hidden', s !== id));
+  }
+
+  function setStep(n) {
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById(`step-${i}`);
+      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    }
+  }
+
+  function showAlert(id, msg, show = true) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.toggle('show', show);
+  }
+
+  function clearAlert(id) { showAlert(id, '', false); }
+
+  function formatCard(val) {
+    return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  // ─── Milestone builder ───────────────────────────────────────────────────
+  function addMilestone() {
+    const milestones = document.getElementById('milestones-container');
+    if (milestoneCount >= 5) {
+      showAlert('create-error', 'Maximum 5 milestone rounds allowed.');
+      return;
+    }
+    milestoneCount++;
+    const idx = milestoneCount;
+
+    const block = document.createElement('div');
+    block.className = 'milestone-block';
+    block.id = `milestone-${idx}`;
+    block.dataset.testid = `milestone-block-${idx}`;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + idx * 30);
+    const dateStr = tomorrow.toISOString().split('T')[0];
+
+    block.innerHTML = `
+      <h3><span class="badge">${idx}</span> Milestone Round ${idx}</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="m${idx}-title" data-testid="m${idx}-title" placeholder="e.g. Design Phase" />
+          <span class="field-error" id="m${idx}-title-err">Title is required</span>
+        </div>
+        <div class="form-group">
+          <label>Amount (THB) *</label>
+          <input type="number" id="m${idx}-amount" data-testid="m${idx}-amount"
+            placeholder="e.g. 1500" min="101" oninput="updateTotal()" />
+          <span class="field-error" id="m${idx}-amount-err">Must be > 100 THB</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea id="m${idx}-description" data-testid="m${idx}-description"
+          placeholder="Describe what will be done in this round"></textarea>
+        <span class="field-error" id="m${idx}-description-err">Description is required</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Deliverables *</label>
+          <input type="text" id="m${idx}-deliverables" data-testid="m${idx}-deliverables"
+            placeholder="e.g. Figma mockups" />
+          <span class="field-error" id="m${idx}-deliverables-err">Deliverables is required</span>
+        </div>
+        <div class="form-group">
+          <label>Due Date *</label>
+          <input type="date" id="m${idx}-due-date" data-testid="m${idx}-due-date" value="${dateStr}" />
+          <span class="field-error" id="m${idx}-due-date-err">Must be a future date</span>
+        </div>
+      </div>
+    `;
+    milestones.appendChild(block);
+    updateTotal();
+    updateAddBtn();
+  }
+
+  function updateTotal() {
+    let total = 0;
+    for (let i = 1; i <= milestoneCount; i++) {
+      const el = document.getElementById(`m${i}-amount`);
+      if (el) total += parseFloat(el.value) || 0;
+    }
+    const disp = document.getElementById('total-display');
+    disp.style.display = milestoneCount > 0 ? 'block' : 'none';
+    document.getElementById('total-amount').textContent = total.toLocaleString();
+  }
+
+  function updateAddBtn() {
+    document.getElementById('add-round-btn').style.display =
+      milestoneCount >= 5 ? 'none' : 'block';
+  }
+
+  document.getElementById('add-round-btn').addEventListener('click', addMilestone);
+
+  // Start with 2 rounds (minimum)
+  addMilestone();
+  addMilestone();
+
+  // ─── Step 1: Submit Quotation ─────────────────────────────────────────────
+  document.getElementById('submit-quotation-btn').addEventListener('click', async () => {
+    clearAlert('create-error');
+
+    if (milestoneCount < 2) {
+      showAlert('create-error', 'You must have at least 2 milestone rounds.');
+      return;
+    }
+
+    const milestones = [];
+    for (let i = 1; i <= milestoneCount; i++) {
+      milestones.push({
+        title: document.getElementById(`m${i}-title`)?.value?.trim(),
+        description: document.getElementById(`m${i}-description`)?.value?.trim(),
+        deliverables: document.getElementById(`m${i}-deliverables`)?.value?.trim(),
+        due_date: document.getElementById(`m${i}-due-date`)?.value,
+        amount: parseFloat(document.getElementById(`m${i}-amount`)?.value) || 0,
+      });
+    }
+
+    const body = {
+      seller_id: document.getElementById('seller-id').value.trim(),
+      buyer_id: document.getElementById('buyer-id').value.trim(),
+      milestones,
+    };
+
+    const btn = document.getElementById('submit-quotation-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      const res = await fetch('/api/v1/quotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data.details ? data.details.join('\n') : data.error;
+        showAlert('create-error', msg);
+        return;
+      }
+
+      quotationId = data.quotation_id;
+      quotationData = body;
+
+      // Populate review table
+      const tbody = document.getElementById('review-tbody');
+      tbody.innerHTML = '';
+      milestones.forEach((m, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${m.title}</td><td>${m.deliverables}</td><td>${m.due_date}</td><td>${m.amount.toLocaleString()}</td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('review-total').textContent = data.total_amount.toLocaleString();
+      document.getElementById('pay-amount-display').textContent = data.total_amount.toLocaleString();
+
+      showSection('section-review');
+      setStep(2);
+    } catch (e) {
+      showAlert('create-error', 'Network error. Is the mock server running?');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Quotation';
+    }
+  });
+
+  // ─── Step 2: Accept Quotation ─────────────────────────────────────────────
+  document.getElementById('accept-btn').addEventListener('click', async () => {
+    clearAlert('accept-error');
+    const btn = document.getElementById('accept-btn');
+    btn.disabled = true;
+    btn.textContent = 'Accepting...';
+
+    try {
+      const res = await fetch(`/api/v1/quotations/${quotationId}/accept`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { showAlert('accept-error', data.error); return; }
+
+      showSection('section-payment');
+      setStep(3);
+    } catch (e) {
+      showAlert('accept-error', 'Network error.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Accept Quotation';
+    }
+  });
+
+  document.getElementById('back-to-create-btn').addEventListener('click', () => {
+    showSection('section-create');
+    setStep(1);
+  });
+
+  // ─── Card number auto-format ───────────────────────────────────────────────
+  document.getElementById('card-number').addEventListener('input', function () {
+    this.value = formatCard(this.value);
+  });
+
+  // ─── Step 3: Payment ──────────────────────────────────────────────────────
+  document.getElementById('pay-btn').addEventListener('click', async () => {
+    clearAlert('payment-error');
+    clearAlert('payment-success');
+
+    const cardRaw = document.getElementById('card-number').value.replace(/\s/g, '');
+    const expiry = document.getElementById('card-expiry').value.trim();
+    const cvv = document.getElementById('card-cvv').value.trim();
+    const currency = document.getElementById('currency').value;
+    const amount = parseFloat(document.getElementById('pay-amount-display').textContent.replace(/,/g, ''));
+
+    let valid = true;
+
+    if (!/^\d{16}$/.test(cardRaw)) {
+      document.getElementById('card-number-error').classList.add('show');
+      document.getElementById('card-number').classList.add('error');
+      valid = false;
+    } else {
+      document.getElementById('card-number-error').classList.remove('show');
+      document.getElementById('card-number').classList.remove('error');
+    }
+
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+      document.getElementById('card-expiry-error').classList.add('show');
+      document.getElementById('card-expiry').classList.add('error');
+      valid = false;
+    } else {
+      document.getElementById('card-expiry-error').classList.remove('show');
+      document.getElementById('card-expiry').classList.remove('error');
+    }
+
+    if (!/^\d{3,4}$/.test(cvv)) {
+      document.getElementById('card-cvv-error').classList.add('show');
+      document.getElementById('card-cvv').classList.add('error');
+      valid = false;
+    } else {
+      document.getElementById('card-cvv-error').classList.remove('show');
+      document.getElementById('card-cvv').classList.remove('error');
+    }
+
+    if (!valid) return;
+
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      const idempotencyKey = `pay-${quotationId}-${Date.now()}`;
+      const res = await fetch('/api/v1/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quotation_id: quotationId,
+          card_number: cardRaw,
+          card_expiry: expiry,
+          card_cvv: cvv,
+          amount,
+          currency,
+          idempotency_key: idempotencyKey,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert('payment-error', data.error);
+        return;
+      }
+
+      showAlert('payment-success',
+        `Payment successful! ID: ${data.payment_id} | Card: ${data.masked_card}`);
+
+      setTimeout(() => {
+        buildExecutionTable();
+        showSection('section-execution');
+        setStep(4);
+      }, 1500);
+    } catch (e) {
+      showAlert('payment-error', 'Network error.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Pay Now';
+    }
+  });
+
+  // ─── Step 4: Milestone Execution ──────────────────────────────────────────
+  function buildExecutionTable() {
+    const tbody = document.getElementById('exec-tbody');
+    tbody.innerHTML = '';
+    for (let i = 1; i <= milestoneCount; i++) {
+      const title = document.getElementById(`m${i}-title`)?.value?.trim();
+      const amount = document.getElementById(`m${i}-amount`)?.value;
+      const tr = document.createElement('tr');
+      tr.id = `exec-row-${i}`;
+      tr.dataset.testid = `exec-row-${i}`;
+      tr.innerHTML = `
+        <td>${i}</td>
+        <td>${title}</td>
+        <td>${parseFloat(amount).toLocaleString()}</td>
+        <td><span class="status-badge status-pending" id="exec-status-${i}" data-testid="exec-status-${i}">pending</span></td>
+        <td>
+          <div class="milestone-action">
+            <button class="btn btn-primary btn-sm" id="submit-work-${i}" data-testid="submit-work-${i}"
+              onclick="submitWork(${i})">Submit Work</button>
+            <button class="btn btn-success btn-sm" id="accept-work-${i}" data-testid="accept-work-${i}"
+              onclick="acceptWork(${i})" disabled>Accept</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  async function submitWork(round) {
+    clearAlert('exec-error');
+    const btn = document.getElementById(`submit-work-${round}`);
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/submit`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { showAlert('exec-error', data.error); btn.disabled = false; btn.textContent = 'Submit Work'; return; }
+
+      setMilestoneStatus(round, 'submitted');
+      btn.textContent = 'Submitted';
+      document.getElementById(`accept-work-${round}`).disabled = false;
+    } catch (e) {
+      showAlert('exec-error', 'Network error.');
+      btn.disabled = false;
+      btn.textContent = 'Submit Work';
+    }
+  }
+
+  async function acceptWork(round) {
+    clearAlert('exec-error');
+    const btn = document.getElementById(`accept-work-${round}`);
+    btn.disabled = true;
+    btn.textContent = 'Accepting...';
+
+    try {
+      const res = await fetch(`/api/v1/quotations/${quotationId}/milestones/${round}/accept`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { showAlert('exec-error', data.error); btn.disabled = false; btn.textContent = 'Accept'; return; }
+
+      setMilestoneStatus(round, 'transferred');
+      btn.textContent = 'Transferred';
+    } catch (e) {
+      showAlert('exec-error', 'Network error.');
+      btn.disabled = false;
+      btn.textContent = 'Accept';
+    }
+  }
+
+  function setMilestoneStatus(round, status) {
+    const badge = document.getElementById(`exec-status-${round}`);
+    badge.className = `status-badge status-${status}`;
+    badge.textContent = status;
+  }
+
+  // ─── Terminate ────────────────────────────────────────────────────────────
+  document.getElementById('terminate-btn').addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to terminate this contract?')) return;
+    clearAlert('exec-error');
+
+    try {
+      const res = await fetch(`/api/v1/quotations/${quotationId}/terminate`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { showAlert('exec-error', data.error); return; }
+
+      document.getElementById('terminate-btn').disabled = true;
+      document.getElementById('terminate-status').style.display = 'inline';
+      document.querySelectorAll('[id^="submit-work-"], [id^="accept-work-"]')
+        .forEach(btn => btn.disabled = true);
+
+      showAlert('exec-error',
+        `Contract terminated. Completed rounds: ${data.completed_rounds}/${data.completed_rounds + data.remaining_rounds}.`);
+      document.getElementById('exec-error').className = 'alert alert-info show';
+    } catch (e) {
+      showAlert('exec-error', 'Network error.');
+    }
+  });
+</script>
+</body>
+</html>

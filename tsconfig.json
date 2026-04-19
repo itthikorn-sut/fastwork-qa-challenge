@@ -16,6 +16,12 @@
       "@fixtures/*": ["automation/fixtures/*"]
     }
   },
-  "include": ["automation/**/*"],
-  "exclude": ["node_modules", "dist", "test-results", "playwright-report"]
+  "include": [
+    "playwright.config.ts",
+    "automation/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "test-results", "playwright-report"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }
