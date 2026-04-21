@@ -58,21 +58,28 @@ UI → Mock API → Response → UI update → Assertion
 3. Buyer makes payment via credit card
 4. Seller submits work per round
 5. Buyer accepts → system transfers money per round
-6. Buyer may terminate at final round
+6. Buyer may terminate at **any active stage** (paid / in_progress), not only at the final round
 
 ---
 
 ## 5. Critical Business Rules
 
-* Milestone rounds: **2–5 only**
-* Each round: **> 100 THB**
-* Total quotation: **> 3000 THB**
-* Date: must be **future**
-* Required fields:
+### Quotation (UI)
 
-  * Title
-  * Description
-  * Deliverables
+* Milestone rounds: **2–5 only** (exactly 1 round or more than 5 → rejected)
+* Each round amount: **> 100 THB** (exactly 100 THB → rejected; must be strictly greater than)
+* Total quotation amount: **> 3000 THB** (exactly 3000 THB → rejected; must be strictly greater than)
+* Due date per round: must be a **future date** (today or earlier → rejected)
+* Required milestone fields: **ชื่องาน** (title, max 100 chars), **รายละเอียด** (description, max 2000 chars), **สิ่งที่ลูกค้าจะได้รับ** (deliverables, max 500 chars)
+* Optional milestone fields: **การแก้ไขงาน** (revision count), **หมายเหตุ** (remarks) — present in form but not required
+
+### Payment (API)
+
+* **Sender and Receiver account status must be active** — inactive accounts cannot create or pay for quotations
+* Transfer amount: **≥ 0.01 THB** (below → 400); **≤ 1,000,000 THB** (above → 402)
+* Credit card owner name: **not empty** and **≤ 100 characters** (empty or >100 → 400)
+* Currency: **THB, VND, IDR only** (any other → 400)
+* Service unavailable: **23:55–00:15** (payments in this window → 503)
 
 ---
 
@@ -134,9 +141,11 @@ UI → Mock API → Response → UI update → Assertion
 
 * Less than 2 rounds → reject
 * More than 5 rounds → reject
-* Amount < 100 → reject
-* Total < 3000 → reject
+* Amount **≤ 100** → reject (exactly 100 THB is invalid; requirement says *more than* 100)
+* Total **≤ 3000** → reject (exactly 3000 THB is invalid; requirement says *exceed* 3000)
 * Past date → reject
+* Account status inactive → reject
+* Owner name empty or > 100 chars → reject
 
 ---
 
@@ -180,15 +189,25 @@ UI → Mock API → Response → UI update → Assertion
 * Validate required fields
 * Validate card format
 * Validate amount constraints
+* Validate account status (buyer and seller must be active)
 * Simulate failure conditions
 
-### Example Rules:
+### Rules:
 
-* Invalid card → 400
+* Missing required fields → 400
+* Invalid card number format → 400
+* Invalid expiry / CVV format → 400
+* Owner name empty or > 100 chars → 400
 * amount < 0.01 → 400
 * amount > 1,000,000 → 402
-* unsupported currency → 400
-* valid → 200 SUCCESS
+* Unsupported currency → 400
+* Quotation not in accepted state → 409
+* Wrong buyer (cross-user) → 403
+* Inactive account → 403
+* Service window 23:55–00:15 → 503
+* Card declined (insufficient funds etc.) → 402
+* Payment gateway error → 500
+* Valid → 200 SUCCESS
 
 ---
 

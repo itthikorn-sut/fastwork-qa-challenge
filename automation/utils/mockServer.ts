@@ -41,6 +41,7 @@ app.post('/api/v1/quotations', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Missing required fields: seller_id, buyer_id, milestones' });
   }
 
+
   if (!Array.isArray(milestones) || milestones.length < 2 || milestones.length > 5) {
     return res.status(400).json({ error: 'Milestone rounds must be between 2 and 5' });
   }
@@ -223,6 +224,14 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
 
   if (quotation.status !== 'accepted') {
     return res.status(409).json({ error: `Quotation must be accepted before payment. Current status: ${quotation.status}` });
+  }
+
+  // Account status check at payment time
+  if (quotation.buyer_id.startsWith('INACTIVE-')) {
+    return res.status(403).json({ error: 'Forbidden: buyer account is inactive' });
+  }
+  if (quotation.seller_id.startsWith('INACTIVE-')) {
+    return res.status(403).json({ error: 'Forbidden: seller account is inactive' });
   }
 
   // Omise test-card decline lookup — mirrors docs.omise.co/api-testing

@@ -96,3 +96,49 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect(res.status()).toBe(200);
   });
 });
+
+test.describe('API — Account status must be active', () => {
+
+  test('inactive buyer cannot pay — rejected at payment (403)', async ({ request }) => {
+    // Create quotation with inactive buyer_id — account status is checked at payment, not creation
+    const payload = { ...buildQuotationPayload(2), buyer_id: 'INACTIVE-BUYER-001' };
+    const created = await request.post('/api/v1/quotations', { data: payload });
+    const { quotation_id, total_amount } = await created.json();
+    await request.post(`/api/v1/quotations/${quotation_id}/accept`);
+
+    const res = await request.post('/api/v1/payments', {
+      data: {
+        quotation_id,
+        credit_card_number: VALID_CARD.number,
+        credit_card_owner_name: VALID_CARD.ownerName,
+        expiration_date: VALID_CARD.expiry,
+        cvv: VALID_CARD.cvv,
+        amount: total_amount,
+        currency: 'THB',
+      },
+    });
+    expect(res.status()).toBe(403);
+    expect((await res.json()).error).toContain('inactive');
+  });
+
+  test('inactive seller blocks payment (403)', async ({ request }) => {
+    const payload = { ...buildQuotationPayload(2), seller_id: 'INACTIVE-SELLER-001' };
+    const created = await request.post('/api/v1/quotations', { data: payload });
+    const { quotation_id, total_amount } = await created.json();
+    await request.post(`/api/v1/quotations/${quotation_id}/accept`);
+
+    const res = await request.post('/api/v1/payments', {
+      data: {
+        quotation_id,
+        credit_card_number: VALID_CARD.number,
+        credit_card_owner_name: VALID_CARD.ownerName,
+        expiration_date: VALID_CARD.expiry,
+        cvv: VALID_CARD.cvv,
+        amount: total_amount,
+        currency: 'THB',
+      },
+    });
+    expect(res.status()).toBe(403);
+    expect((await res.json()).error).toContain('inactive');
+  });
+});
