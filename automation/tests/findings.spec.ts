@@ -143,14 +143,18 @@ test.describe('FINDING-003 — Payment amount not validated against quotation to
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FINDING-004: No client-side validation for card holder name field
+// FINDING-004: Empty card holder name silently replaced with 'CARD HOLDER'
 //
-// Expected: Submitting the payment form with an empty card holder name field
-//           should show an inline validation error (same pattern as card number
-//           and expiry fields which already have inline errors).
-// Actual:   The form submits, the API rejects with 400, but the UI shows only
-//           a generic alert — no field-level inline error is highlighted.
-// Severity: Low — degrades UX; user does not know which field caused the error.
+// Expected: Submitting the payment form with an empty card holder name should
+//           be blocked with an inline validation error, the same as card number
+//           and expiry which already show inline errors.
+// Actual:   The UI silently substitutes the empty field with the literal string
+//           'CARD HOLDER' before calling the API. The server never sees an empty
+//           value, the payment succeeds under a fake name, and no error is shown.
+//           Root cause (mock-ui/index.html line ~519):
+//             credit_card_owner_name: $('card-holder').value.trim() || 'CARD HOLDER'
+// Severity: Medium — silent data substitution bypasses all name validation;
+//           card is charged under a name the user never entered.
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('FINDING-004 — No inline validation for empty card holder name', () => {
 
@@ -174,7 +178,43 @@ test.describe('FINDING-004 — No inline validation for empty card holder name',
     await payment.pay();
 
     // Expected: inline error visible next to card holder field
-    // Actual:   no inline error; only generic payment-error alert shown
+    // Actual:   payment succeeds silently with 'CARD HOLDER' as the name
     await expect(page.locator('#card-holder-error')).toBeVisible();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FINDING-005: credit_card_owner_name max 100 characters not enforced
+//
+// Expected: Per API requirement — "The credit card owner's name should not be
+//           empty and should not exceed 100 characters." Sending a name longer
+//           than 100 characters should return 400.
+// Actual:   The server has no length check on credit_card_owner_name. Any
+//           length is accepted and the payment succeeds.
+// Severity: Medium — requirement violation; excessively long names can cause
+//           downstream truncation or storage issues in real payment gateways.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('FINDING-005 — credit_card_owner_name max 100 characters not enforced', () => {
+
+  test('[FAIL] rejects credit_card_owner_name exceeding 100 characters', async ({ request }) => {
+    const { quotationId, totalAmount } = await createAndAcceptQuotation(request, 2);
+
+    const longName = 'A'.repeat(101); // 101 characters — exceeds the 100-char requirement
+
+    const res = await request.post('/api/v1/payments', {
+      data: {
+        quotation_id: quotationId,
+        credit_card_number: VALID_CARD.number,
+        credit_card_owner_name: longName,
+        expiration_date: VALID_CARD.expiry,
+        cvv: VALID_CARD.cvv,
+        amount: totalAmount,
+        currency: 'THB',
+      },
+    });
+
+    // Expected: 400 — name exceeds 100-character limit
+    // Actual:   200 — oversized name accepted silently
+    expect(res.status()).toBe(400);
   });
 });
