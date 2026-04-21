@@ -54,7 +54,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
 
     await expect(payment.successAlert()).toBeVisible({ timeout: 5000 });
     await expect(payment.successAlert()).toContainText('PAY-');
-    await expect(payment.successAlert()).toContainText('****-****-****-1111');
+    await expect(payment.successAlert()).toContainText('****-****-****-4242');
 
     // Step 4 loads after 1.5s delay in UI
     await expect(quotation.step(4)).toHaveClass(/active/, { timeout: 5000 });
@@ -83,7 +83,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await payment.fillPayment(VALID_CARD);
     await payment.pay();
 
-    await expect(payment.successAlert()).toContainText('****-****-****-1111');
+    await expect(payment.successAlert()).toContainText('****-****-****-4242');
   });
 
   test('Step indicator progresses correctly through all 4 steps', async () => {

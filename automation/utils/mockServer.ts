@@ -173,10 +173,10 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Missing required fields', fields: missing });
   }
 
-  // Card number format: 16 digits
+  // Card number format: 14–16 digits (14 = Diners, 15 = Amex, 16 = Visa/MC/JCB/UnionPay)
   const cardDigits = String(credit_card_number).replace(/\s/g, '');
-  if (!/^\d{16}$/.test(cardDigits)) {
-    return res.status(400).json({ error: 'Invalid card number format. Must be 16 digits.' });
+  if (!/^\d{14,16}$/.test(cardDigits)) {
+    return res.status(400).json({ error: 'Invalid card number format. Must be 14–16 digits.' });
   }
 
   // Expiration date format: MM/YY
@@ -189,10 +189,11 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid CVV format. Must be 3-4 digits.' });
   }
 
-  // Simulate 500 for specific test card
+  // Simulate payment-gateway 500 for dedicated error-simulation card
   if (cardDigits === '9999999999999999') {
     return res.status(500).json({ error: 'INTERNAL_SERVER_ERROR: Payment gateway unavailable' });
   }
+
 
   // Amount validation
   if (typeof amount !== 'number' || amount < 0.01) {
@@ -224,9 +225,55 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
     return res.status(409).json({ error: `Quotation must be accepted before payment. Current status: ${quotation.status}` });
   }
 
-  // Simulate card ending in 0000 as declined
-  if (cardDigits.endsWith('0000')) {
-    return res.status(402).json({ error: 'Card declined: insufficient funds' });
+  // Omise test-card decline lookup — mirrors docs.omise.co/api-testing
+  const OMISE_DECLINE: Record<string, { error: string; failure_code: string }> = {
+    // insufficient_fund
+    '4111111111140011': { error: 'Card declined: insufficient funds',      failure_code: 'insufficient_fund' },
+    '5555551111110011': { error: 'Card declined: insufficient funds',      failure_code: 'insufficient_fund' },
+    '3530111111190011': { error: 'Card declined: insufficient funds',      failure_code: 'insufficient_fund' },
+    '6250947000000014': { error: 'Card declined: insufficient funds',      failure_code: 'insufficient_fund' },
+    // stolen_or_lost_card
+    '4111111111130012': { error: 'Card declined: stolen or lost card',     failure_code: 'stolen_or_lost_card' },
+    '5555551111100012': { error: 'Card declined: stolen or lost card',     failure_code: 'stolen_or_lost_card' },
+    '3530111111180012': { error: 'Card declined: stolen or lost card',     failure_code: 'stolen_or_lost_card' },
+    '6250947000000022': { error: 'Card declined: stolen or lost card',     failure_code: 'stolen_or_lost_card' },
+    // failed_processing
+    '4111111111120013': { error: 'Card declined: failed processing',       failure_code: 'failed_processing' },
+    '5555551111190013': { error: 'Card declined: failed processing',       failure_code: 'failed_processing' },
+    '3530111111170013': { error: 'Card declined: failed processing',       failure_code: 'failed_processing' },
+    '377138160000009':  { error: 'Card declined: failed processing',       failure_code: 'failed_processing' }, // Amex
+    '6250947000000030': { error: 'Card declined: failed processing',       failure_code: 'failed_processing' },
+    // payment_rejected
+    '4111111111110014': { error: 'Card declined: payment rejected',        failure_code: 'payment_rejected' },
+    '5555551111180014': { error: 'Card declined: payment rejected',        failure_code: 'payment_rejected' },
+    '3530111111160014': { error: 'Card declined: payment rejected',        failure_code: 'payment_rejected' },
+    '6250947000000048': { error: 'Card declined: payment rejected',        failure_code: 'payment_rejected' },
+    // failed_fraud_check
+    '4111111111190016': { error: 'Card declined: failed fraud check',      failure_code: 'failed_fraud_check' },
+    '5555551111160016': { error: 'Card declined: failed fraud check',      failure_code: 'failed_fraud_check' },
+    '3530111111140016': { error: 'Card declined: failed fraud check',      failure_code: 'failed_fraud_check' },
+    '6250947000000055': { error: 'Card declined: failed fraud check',      failure_code: 'failed_fraud_check' },
+    // invalid_account_number
+    '4111111111180017': { error: 'Card declined: invalid account number',  failure_code: 'invalid_account_number' },
+    '5555551111150017': { error: 'Card declined: invalid account number',  failure_code: 'invalid_account_number' },
+    '3530111111130017': { error: 'Card declined: invalid account number',  failure_code: 'invalid_account_number' },
+    '6250947000000063': { error: 'Card declined: invalid account number',  failure_code: 'invalid_account_number' },
+    // 3ds_enrollment_failure
+    '4111111111150002': { error: '3DS enrollment failed',                  failure_code: '3ds_enrollment_failure' },
+    '5555551111120002': { error: '3DS enrollment failed',                  failure_code: '3ds_enrollment_failure' },
+    '3530111111100002': { error: '3DS enrollment failed',                  failure_code: '3ds_enrollment_failure' },
+    '6250947000000071': { error: '3DS enrollment failed',                  failure_code: '3ds_enrollment_failure' },
+    // 3ds_validation_failure
+    '4111111111140003': { error: '3DS validation failed: wrong OTP or timeout', failure_code: '3ds_validation_failure' },
+    '5555551111110003': { error: '3DS validation failed: wrong OTP or timeout', failure_code: '3ds_validation_failure' },
+    '3530111111190003': { error: '3DS validation failed: wrong OTP or timeout', failure_code: '3ds_validation_failure' },
+    '377138161111003':  { error: '3DS validation failed: wrong OTP or timeout', failure_code: '3ds_validation_failure' }, // Amex
+    '6250947000000089': { error: '3DS validation failed: wrong OTP or timeout', failure_code: '3ds_validation_failure' },
+  };
+
+  const decline = OMISE_DECLINE[cardDigits];
+  if (decline) {
+    return res.status(402).json(decline);
   }
 
   // Success
