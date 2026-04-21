@@ -121,6 +121,39 @@ test.describe('API — Quotation validation rules', () => {
     expect(res.status()).toBe(404);
   });
 
+  test('rejects title exceeding 100 characters', async ({ request }) => {
+    const milestones = buildMilestones(3, 1100);
+    milestones[0].title = 'T'.repeat(101);
+    const res = await request.post('/api/v1/quotations', {
+      data: { seller_id: 'S1', buyer_id: 'B1', milestones },
+    });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.details.some((d: string) => d.includes('100 characters'))).toBe(true);
+  });
+
+  test('rejects description exceeding 2000 characters', async ({ request }) => {
+    const milestones = buildMilestones(3, 1100);
+    milestones[0].description = 'D'.repeat(2001);
+    const res = await request.post('/api/v1/quotations', {
+      data: { seller_id: 'S1', buyer_id: 'B1', milestones },
+    });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.details.some((d: string) => d.includes('2000 characters'))).toBe(true);
+  });
+
+  test('rejects deliverables exceeding 500 characters', async ({ request }) => {
+    const milestones = buildMilestones(3, 1100);
+    milestones[0].deliverables = 'X'.repeat(501);
+    const res = await request.post('/api/v1/quotations', {
+      data: { seller_id: 'S1', buyer_id: 'B1', milestones },
+    });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.details.some((d: string) => d.includes('500 characters'))).toBe(true);
+  });
+
   test('cannot accept a quotation twice', async ({ request }) => {
     const payload = buildQuotationPayload(3);
     const created = await request.post('/api/v1/quotations', { data: payload });

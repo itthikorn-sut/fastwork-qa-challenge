@@ -4,6 +4,7 @@ export interface CardData {
   number: string;
   expiry: string;
   cvv: string;
+  ownerName?: string;
 }
 
 export class PaymentPage {
@@ -14,7 +15,11 @@ export class PaymentPage {
   }
 
   async fillPayment(card: CardData, currency = 'THB') {
+    await this.page.waitForSelector('[data-testid="card-number"]', { state: 'visible', timeout: 5000 });
     await this.page.fill('[data-testid="card-number"]', card.number);
+    if (card.ownerName) {
+      await this.page.fill('[data-testid="card-holder"]', card.ownerName);
+    }
     await this.page.fill('[data-testid="card-expiry"]', card.expiry);
     await this.page.fill('[data-testid="card-cvv"]', card.cvv);
     await this.page.selectOption('[data-testid="currency"]', currency);

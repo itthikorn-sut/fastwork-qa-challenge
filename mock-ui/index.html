@@ -224,9 +224,21 @@
         <label for="agree-cb" style="font-weight:400;cursor:pointer">ข้าพเจ้ายอมรับ<strong>ข้อตกลงการชำระเงิน</strong>และ<strong>เงื่อนไขการใช้บริการ</strong>ของ Fastwork</label>
       </div>
       <div class="alert alert-error" id="accept-error"></div>
+      <div class="alert alert-error" id="reject-error"></div>
       <div class="btn-row">
         <button class="btn btn-primary" id="accept-btn" data-testid="accept-btn">ยืนยัน</button>
+        <button class="btn btn-danger btn-outline" id="reject-quotation-btn" data-testid="reject-quotation-btn">ปฏิเสธ</button>
         <button class="btn btn-outline" id="back-to-create-btn">ยกเลิก</button>
+      </div>
+    </div>
+
+    <!-- ── Quotation Rejected ── -->
+    <div id="section-rejected" class="hidden">
+      <div class="success-screen">
+        <div class="sicon" style="background:#fee2e2;color:#dc2626">✕</div>
+        <div style="font-size:15px;font-weight:700;color:#111928;margin-bottom:8px">ปฏิเสธใบเสนอราคาแล้ว</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:8px">ผู้รับจ้างจะได้รับแจ้งเตือนถึงการปฏิเสธ</div>
+        <div id="rejection-reason-display" style="font-size:12px;color:#374151;background:#f9fafb;padding:8px 12px;border-radius:6px;margin-top:6px"></div>
       </div>
     </div>
 
@@ -256,7 +268,7 @@
         <input id="card-number" data-testid="card-number" placeholder="•••• •••• •••• ••••" maxlength="19"/>
         <div class="ferr" id="card-number-error">กรุณากรอกหมายเลขบัตร 16 หลัก</div>
       </div>
-      <div class="fg"><label>ชื่อผู้ถือบัตร</label><input id="card-holder" placeholder="ชื่อบนบัตร"/></div>
+      <div class="fg"><label>ชื่อผู้ถือบัตร *</label><input id="card-holder" data-testid="card-holder" placeholder="ชื่อบนบัตร"/></div>
       <div class="r2">
         <div class="fg" style="margin-bottom:0">
           <label>MM/ปป *</label>
@@ -273,8 +285,8 @@
         <label>สกุลเงิน</label>
         <select id="currency" data-testid="currency">
           <option value="THB">THB — บาทไทย</option>
-          <option value="USD">USD — ดอลลาร์สหรัฐ</option>
-          <option value="EUR">EUR — ยูโร</option>
+          <option value="VND">VND — ดองเวียดนาม</option>
+          <option value="IDR">IDR — รูเปียห์อินโดนีเซีย</option>
         </select>
       </div>
       <!-- hidden span keeps English amount for test assertions -->
@@ -300,6 +312,16 @@
       </div>
     </div>
 
+    <!-- ── Contract Completed ── -->
+    <div id="section-completed" class="hidden" data-testid="section-completed">
+      <div class="success-screen">
+        <div class="sicon" style="background:#d1fae5;color:#059669">✓</div>
+        <div style="font-size:15px;font-weight:700;color:#111928;margin-bottom:8px">สัญญาเสร็จสมบูรณ์</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px">ทุกงวดได้รับการยืนยันและโอนเงินเรียบร้อยแล้ว</div>
+        <div id="completed-summary" data-testid="completed-summary" data-milestone-count="" style="font-size:13px;font-weight:600;color:#059669"></div>
+      </div>
+    </div>
+
   </div><!-- mbody -->
 </div><!-- modal -->
 </div><!-- modal-wrap -->
@@ -311,7 +333,7 @@ const fmt2 = n => Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maxi
 const fmtI = n => Number(n).toLocaleString('th-TH');
 
 function showSection(id) {
-  ['section-create','section-review','section-sent','section-payment','section-execution']
+  ['section-create','section-review','section-sent','section-payment','section-execution','section-rejected','section-completed']
     .forEach(s => $(s).classList.toggle('hidden', s !== id));
 }
 
@@ -437,6 +459,23 @@ $('accept-btn').addEventListener('click', async () => {
 
 $('back-to-create-btn').addEventListener('click', () => { showSection('section-create'); setStep(1); });
 
+$('reject-quotation-btn').addEventListener('click', async () => {
+  clearAlert('reject-error');
+  const reason = prompt('กรุณาระบุเหตุผลในการปฏิเสธ:') || 'ไม่ตรงตามความต้องการ';
+  const btn = $('reject-quotation-btn'); btn.disabled = true; btn.textContent = 'กำลังดำเนินการ...';
+  try {
+    const res = await fetch(`/api/v1/quotations/${quotationId}/reject`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('reject-error', data.error); return; }
+    $('rejection-reason-display').textContent = `เหตุผล: ${data.reason}`;
+    showSection('section-rejected');
+  } catch { showAlert('reject-error', 'เกิดข้อผิดพลาด กรุณาลองใหม่'); }
+  finally { btn.disabled = false; btn.textContent = 'ปฏิเสธ'; }
+});
+
 function buildPaySummary() {
   let html = '';
   for (let i = 1; i <= milestoneCount; i++) {
@@ -475,8 +514,11 @@ $('pay-btn').addEventListener('click', async () => {
     const res = await fetch('/api/v1/payments', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        quotation_id: quotationId, card_number: cardRaw, card_expiry: expiry,
-        card_cvv: cvv, amount, currency: $('currency').value,
+        quotation_id: quotationId,
+        credit_card_number: cardRaw,
+        credit_card_owner_name: $('card-holder').value.trim() || 'CARD HOLDER',
+        expiration_date: expiry,
+        cvv, amount, currency: $('currency').value,
         idempotency_key: `pay-${quotationId}-${Date.now()}`,
       }),
     });
@@ -494,9 +536,9 @@ const STATUS_CLS = { pending:'status-pending', submitted:'status-submitted', acc
 
 function setStatus(round, key) {
   const badge = $(`exec-status-${round}`);
-  badge.textContent = key; // English for Playwright tests
+  badge.textContent = STATUS_TH[key] || key;
+  badge.dataset.status = key;
   badge.className = `sbadge ${STATUS_CLS[key]||'status-pending'}`;
-  badge.title = STATUS_TH[key]||key;
 }
 
 function buildExecTable() {
@@ -508,7 +550,7 @@ function buildExecTable() {
     tr.id = `exec-row-${i}`; tr.dataset.testid = `exec-row-${i}`;
     tr.innerHTML = `
       <td>${i}</td><td style="max-width:120px">${title}</td><td>${fmtI(amt)}</td>
-      <td><span class="sbadge status-pending" id="exec-status-${i}" data-testid="exec-status-${i}">pending</span></td>
+      <td><span class="sbadge status-pending" id="exec-status-${i}" data-testid="exec-status-${i}" data-status="pending">รอดำเนินการ</span></td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" id="submit-work-${i}" data-testid="submit-work-${i}" onclick="doSubmit(${i})">ส่งงาน</button>
@@ -540,6 +582,16 @@ async function doAccept(round) {
     const data = await res.json();
     if (!res.ok) { showAlert('exec-error', data.error); btn.disabled=false; btn.textContent='ยอมรับ'; return; }
     setStatus(round,'transferred'); btn.textContent='โอนแล้ว'; $(`reject-work-${round}`).disabled=true;
+    // Check if all milestones are transferred → transition to completed
+    const allTransferred = Array.from(document.querySelectorAll('[data-testid^="exec-status-"]'))
+      .every(el => el.getAttribute('data-status') === 'transferred');
+    if (allTransferred) {
+      setTimeout(() => {
+        $('completed-summary').textContent = `ทั้งหมด ${milestoneCount} งวด โอนเงินเรียบร้อยแล้ว`;
+        $('completed-summary').dataset.milestoneCount = String(milestoneCount);
+        showSection('section-completed');
+      }, 600);
+    }
   } catch { showAlert('exec-error','เกิดข้อผิดพลาด'); btn.disabled=false; btn.textContent='ยอมรับ'; }
 }
 

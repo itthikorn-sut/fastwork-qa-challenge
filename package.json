@@ -8,7 +8,9 @@
     "test:ui": "playwright test automation/tests/ui",
     "test:api": "playwright test automation/tests/api",
     "test:report": "playwright show-report",
-    "mock:server": "ts-node automation/utils/mockServer.ts"
+    "mock:server": "ts-node automation/utils/mockServer.ts",
+    "perf:payment": "k6 run k6/payment-load.js",
+    "perf:quotation": "k6 run k6/quotation-load.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",

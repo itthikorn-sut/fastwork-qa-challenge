@@ -10,6 +10,7 @@ const processedPayments = new Map<string, object>();
 
 // In-memory store for quotation state
 const quotations = new Map<string, QuotationState>();
+let quotationSeq = 0;
 
 interface Milestone {
   round: number;
@@ -27,8 +28,9 @@ interface QuotationState {
   buyer_id: string;
   milestones: Milestone[];
   total_amount: number;
-  status: 'draft' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'terminated';
+  status: 'draft' | 'accepted' | 'rejected' | 'paid' | 'in_progress' | 'completed' | 'terminated';
   paid_at?: string;
+  rejection_reason?: string;
 }
 
 // POST /api/v1/quotations - create quotation
@@ -49,8 +51,11 @@ app.post('/api/v1/quotations', (req: Request, res: Response) => {
   for (const [i, m] of milestones.entries()) {
     const round = i + 1;
     if (!m.title) errors.push(`Round ${round}: title is required`);
+    else if (m.title.length > 100) errors.push(`Round ${round}: title must not exceed 100 characters`);
     if (!m.description) errors.push(`Round ${round}: description is required`);
+    else if (m.description.length > 2000) errors.push(`Round ${round}: description must not exceed 2000 characters`);
     if (!m.deliverables) errors.push(`Round ${round}: deliverables is required`);
+    else if (m.deliverables.length > 500) errors.push(`Round ${round}: deliverables must not exceed 500 characters`);
     if (!m.due_date) errors.push(`Round ${round}: due_date is required`);
     if (m.amount === undefined || m.amount === null) {
       errors.push(`Round ${round}: amount is required`);
@@ -76,7 +81,7 @@ app.post('/api/v1/quotations', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Validation failed', details: errors });
   }
 
-  const id = `QUO-${Date.now()}`;
+  const id = `QUO-${Date.now()}-${++quotationSeq}`;
   const quotation: QuotationState = {
     id,
     seller_id,
@@ -105,9 +110,50 @@ app.post('/api/v1/quotations/:id/accept', (req: Request, res: Response) => {
   return res.status(200).json({ quotation_id: quotation.id, status: 'accepted' });
 });
 
+// POST /api/v1/quotations/:id/reject - buyer declines quotation
+app.post('/api/v1/quotations/:id/reject', (req: Request, res: Response) => {
+  const quotation = quotations.get(req.params.id);
+  if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+  if (quotation.status !== 'draft') {
+    return res.status(409).json({ error: `Cannot reject quotation in status: ${quotation.status}` });
+  }
+  const { reason } = req.body;
+  quotation.status = 'rejected';
+  quotation.rejection_reason = reason || 'No reason provided';
+  return res.status(200).json({
+    quotation_id: quotation.id,
+    status: 'rejected',
+    reason: quotation.rejection_reason,
+  });
+});
+
+// Helper: returns true if time falls in maintenance window 23:55–00:15
+function isServiceWindow(timeOverride?: string): boolean {
+  let h: number, m: number;
+  if (timeOverride && /^\d{2}:\d{2}$/.test(timeOverride)) {
+    [h, m] = timeOverride.split(':').map(Number);
+  } else {
+    const now = new Date();
+    h = now.getHours(); m = now.getMinutes();
+  }
+  return (h === 23 && m >= 55) || (h === 0 && m <= 15);
+}
+
 // POST /api/v1/payments - process payment
 app.post('/api/v1/payments', (req: Request, res: Response) => {
-  const { quotation_id, card_number, card_expiry, card_cvv, amount, currency, idempotency_key } = req.body;
+  // Service window check (23:55–00:15); x-simulated-time header overrides for tests
+  const simulatedTime = req.headers['x-simulated-time'] as string | undefined;
+  if (isServiceWindow(simulatedTime)) {
+    return res.status(503).json({ error: 'Service unavailable: maintenance window 23:55–00:15. Please try again after 00:15.' });
+  }
+
+  // 401 check: reject requests with explicit invalid token
+  const auth = req.headers['authorization'];
+  if (auth && auth !== 'Bearer valid-token') {
+    return res.status(401).json({ error: 'UNAUTHORIZE: Invalid or expired token' });
+  }
+
+  const { quotation_id, credit_card_number, credit_card_owner_name, expiration_date, cvv, amount, currency, idempotency_key } = req.body;
 
   // Idempotency check
   if (idempotency_key && processedPayments.has(idempotency_key)) {
@@ -117,9 +163,10 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
   // Required fields
   const missing: string[] = [];
   if (!quotation_id) missing.push('quotation_id');
-  if (!card_number) missing.push('card_number');
-  if (!card_expiry) missing.push('card_expiry');
-  if (!card_cvv) missing.push('card_cvv');
+  if (!credit_card_number) missing.push('credit_card_number');
+  if (!credit_card_owner_name) missing.push('credit_card_owner_name');
+  if (!expiration_date) missing.push('expiration_date');
+  if (!cvv) missing.push('cvv');
   if (amount === undefined || amount === null) missing.push('amount');
   if (!currency) missing.push('currency');
   if (missing.length > 0) {
@@ -127,19 +174,24 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
   }
 
   // Card number format: 16 digits
-  const cardDigits = String(card_number).replace(/\s/g, '');
+  const cardDigits = String(credit_card_number).replace(/\s/g, '');
   if (!/^\d{16}$/.test(cardDigits)) {
     return res.status(400).json({ error: 'Invalid card number format. Must be 16 digits.' });
   }
 
-  // Card expiry format: MM/YY
-  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card_expiry)) {
-    return res.status(400).json({ error: 'Invalid card expiry format. Use MM/YY.' });
+  // Expiration date format: MM/YY
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiration_date)) {
+    return res.status(400).json({ error: 'Invalid expiration_date format. Use MM/YY.' });
   }
 
-  // Card CVV: 3-4 digits
-  if (!/^\d{3,4}$/.test(String(card_cvv))) {
+  // CVV: 3-4 digits
+  if (!/^\d{3,4}$/.test(String(cvv))) {
     return res.status(400).json({ error: 'Invalid CVV format. Must be 3-4 digits.' });
+  }
+
+  // Simulate 500 for specific test card
+  if (cardDigits === '9999999999999999') {
+    return res.status(500).json({ error: 'INTERNAL_SERVER_ERROR: Payment gateway unavailable' });
   }
 
   // Amount validation
@@ -150,8 +202,8 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
     return res.status(402).json({ error: 'Insufficient funds or amount exceeds limit' });
   }
 
-  // Currency validation
-  const supportedCurrencies = ['THB', 'USD', 'EUR'];
+  // Currency validation — supported: THB, VND, IDR
+  const supportedCurrencies = ['THB', 'VND', 'IDR'];
   if (!supportedCurrencies.includes(String(currency).toUpperCase())) {
     return res.status(400).json({ error: `Unsupported currency: ${currency}. Supported: ${supportedCurrencies.join(', ')}` });
   }
@@ -161,6 +213,13 @@ app.post('/api/v1/payments', (req: Request, res: Response) => {
   if (!quotation) {
     return res.status(404).json({ error: 'Quotation not found' });
   }
+
+  // Cross-user authorization: only the quotation's buyer may pay
+  const userId = req.headers['x-user-id'] as string | undefined;
+  if (userId && quotation.buyer_id !== userId) {
+    return res.status(403).json({ error: 'Forbidden: only the buyer of this quotation may initiate payment' });
+  }
+
   if (quotation.status !== 'accepted') {
     return res.status(409).json({ error: `Quotation must be accepted before payment. Current status: ${quotation.status}` });
   }
@@ -226,9 +285,11 @@ app.post('/api/v1/quotations/:id/milestones/:round/accept', (req: Request, res: 
   // Simulate fund transfer
   setTimeout(() => { milestone.status = 'transferred'; }, 100);
 
-  const allDone = quotation.milestones.every(m => m.round <= round ? true : true);
-  const isLastRound = round === quotation.milestones.length;
-  if (isLastRound) quotation.status = 'completed';
+  // Mark completed only when every milestone is accepted or transferred
+  const allAccepted = quotation.milestones.every(
+    m => m.status === 'accepted' || m.status === 'transferred',
+  );
+  if (allAccepted) quotation.status = 'completed';
 
   return res.status(200).json({
     quotation_id: quotation.id,
@@ -287,6 +348,13 @@ app.post('/api/v1/quotations/:id/terminate', (req: Request, res: Response) => {
 app.get('/api/v1/quotations/:id', (req: Request, res: Response) => {
   const quotation = quotations.get(req.params.id);
   if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+  // Cross-user authorization: only buyer or seller of this quotation may view it
+  const userId = req.headers['x-user-id'] as string | undefined;
+  if (userId && quotation.buyer_id !== userId && quotation.seller_id !== userId) {
+    return res.status(403).json({ error: 'Forbidden: access to this quotation is denied' });
+  }
+
   return res.status(200).json(quotation);
 });
 

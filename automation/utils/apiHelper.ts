@@ -26,9 +26,10 @@ export async function createAcceptAndPay(
   const payRes = await request.post('/api/v1/payments', {
     data: {
       quotation_id: quotationId,
-      card_number: VALID_CARD.number,
-      card_expiry: VALID_CARD.expiry,
-      card_cvv: VALID_CARD.cvv,
+      credit_card_number: VALID_CARD.number,
+      credit_card_owner_name: VALID_CARD.ownerName,
+      expiration_date: VALID_CARD.expiry,
+      cvv: VALID_CARD.cvv,
       amount: totalAmount,
       currency: 'THB',
       idempotency_key: `setup-${quotationId}`,

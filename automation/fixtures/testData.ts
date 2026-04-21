@@ -1,6 +1,6 @@
-export const VALID_CARD = { number: '4111111111111111', expiry: '12/28', cvv: '123' };
-export const DECLINED_CARD = { number: '4111111100000000', expiry: '12/28', cvv: '123' };
-export const INVALID_CARD = { number: '1234', expiry: '13/99', cvv: '1' };
+export const VALID_CARD = { number: '4111111111111111', expiry: '12/28', cvv: '123', ownerName: 'TEST USER' };
+export const DECLINED_CARD = { number: '4111111100000000', expiry: '12/28', cvv: '123', ownerName: 'TEST USER' };
+export const INVALID_CARD = { number: '1234', expiry: '13/99', cvv: '1', ownerName: '' };
 
 export const BASE_URL = 'http://localhost:3000';
 

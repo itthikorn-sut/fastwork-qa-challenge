@@ -34,7 +34,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await expect(page.locator('#review-tbody tr')).toHaveCount(3);
   });
 
-  test('Full E2E: create → accept → pay → execute all rounds → verify transferred', async ({ page }) => {
+  test('Full E2E: create → accept → pay → execute all rounds → verify transferred', async () => {
     // ── Step 1: Create ───────────────────────────────────────────────────
     await quotation.fillMilestone(1, MILESTONES[0]);
     await quotation.fillMilestone(2, MILESTONES[1]);
@@ -61,20 +61,20 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
 
     // ── Step 4: Execute milestones ───────────────────────────────────────
     for (let round = 1; round <= 3; round++) {
-      await expect(execution.milestoneStatus(round)).toHaveText('pending');
+      await expect(execution.milestoneStatus(round)).toHaveAttribute('data-status', 'pending');
 
       await execution.submitWork(round);
-      await expect(execution.milestoneStatus(round)).toHaveText('submitted');
+      await expect(execution.milestoneStatus(round)).toHaveAttribute('data-status', 'submitted');
 
       await execution.acceptWork(round);
-      await expect(execution.milestoneStatus(round)).toHaveText('transferred');
+      await expect(execution.milestoneStatus(round)).toHaveAttribute('data-status', 'transferred');
     }
 
     // Terminate button should still be enabled (contract completed naturally)
     await expect(execution.terminateBtn()).toBeVisible();
   });
 
-  test('UI shows masked card number in payment success message', async ({ page }) => {
+  test('UI shows masked card number in payment success message', async () => {
     await quotation.fillMilestone(1, MILESTONES[0]);
     await quotation.fillMilestone(2, MILESTONES[1]);
     await quotation.submitQuotation();
@@ -86,7 +86,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await expect(payment.successAlert()).toContainText('****-****-****-1111');
   });
 
-  test('Step indicator progresses correctly through all 4 steps', async ({ page }) => {
+  test('Step indicator progresses correctly through all 4 steps', async () => {
     await expect(quotation.step(1)).toHaveClass(/active/);
 
     await quotation.fillMilestone(1, MILESTONES[0]);
