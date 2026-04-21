@@ -165,10 +165,10 @@ test.describe('FINDING-004 — No inline validation for empty card holder name',
     await payment.acceptQuotation();
 
     // Fill card details but leave card holder name empty
-    await payment.page.waitForSelector('[data-testid="card-number"]', { state: 'visible' });
-    await payment.page.fill('[data-testid="card-number"]', VALID_CARD.number);
-    await payment.page.fill('[data-testid="card-expiry"]', VALID_CARD.expiry);
-    await payment.page.fill('[data-testid="card-cvv"]', VALID_CARD.cvv);
+    await page.waitForSelector('[data-testid="card-number"]', { state: 'visible' });
+    await page.fill('[data-testid="card-number"]', VALID_CARD.number);
+    await page.fill('[data-testid="card-expiry"]', VALID_CARD.expiry);
+    await page.fill('[data-testid="card-cvv"]', VALID_CARD.cvv);
     // Intentionally skip card-holder
 
     await payment.pay();
