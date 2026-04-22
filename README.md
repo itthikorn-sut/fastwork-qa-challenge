@@ -83,17 +83,22 @@ npm run mock:server
 
 ---
 
-## Test Suite — 51 Tests
+## Test Suite — 104 Tests
 
 ### Coverage by Category
 
 | Category | File | Tests | Scope |
 |---|---|---|---|
-| API — Quotation Validation | `tests/api/quotation.api.spec.ts` | 13 | Business rules, edge cases |
-| API — Payment Scenarios | `tests/api/payment.api.spec.ts` | 20 | Failures, idempotency, concurrency |
+| API — Quotation Validation | `tests/api/quotation.api.spec.ts` | 24 | Business rules, edge cases, account status |
+| API — Payment Scenarios | `tests/api/payment.api.spec.ts` | 23 | Failures, idempotency, concurrency, data consistency |
+| API — Maintenance Window Demo | `tests/api/demo-bypass-window.spec.ts` | 4 | Time simulation header, boundary testing |
 | UI — Form Validation | `tests/ui/quotation.ui.spec.ts` | 9 | Client-side validation behavior |
+| UI — Payment & Account Status | `tests/ui/payment.ui.spec.ts` | 18 | Payment form, card validation, account status checks |
 | E2E — Happy Path | `tests/e2e/happy-path.spec.ts` | 4 | Full 4-step flow |
 | E2E — Termination | `tests/e2e/termination.spec.ts` | 5 | Contract termination states |
+| E2E — Contract Completion | `tests/e2e/contract-completion.spec.ts` | 4 | Milestone acceptance, fund transfer, completion |
+| Findings (Expected Failures) | `tests/findings.spec.ts` | 6 | Bug documentation: validation gaps, UI issues |
+| **TOTAL** | | **96 passing + 8 expected failures** | |
 
 ### Key Scenarios Covered
 
@@ -171,8 +176,8 @@ GitHub Actions runs the full test suite on every push and pull request.
 1. Checkout → Install Node.js 20 → `npm ci`
 2. Install Playwright Chromium (`--with-deps`)
 3. Start mock server (auto-managed by Playwright `webServer`)
-4. Run all 51 tests
-5. Upload HTML report as artifact (retained 14 days)
+4. Run all 104 tests (96 passing + 8 expected findings)
+5. Upload HTML report with videos/screenshots as artifact (retained 14 days)
 
 **[→ View workflow](.github/workflows/playwright.yml)**
 
@@ -182,6 +187,8 @@ GitHub Actions runs the full test suite on every push and pull request.
 
 | Document | Description |
 |---|---|
+| [Test Cases Catalog](automation/tests/TEST-CASES.md) | Complete enumeration of all 104 test cases with IDs (TC-* and FINDING-*) mapped to .spec.ts |
+| [Test Strategy & Plan](plan.md) | Full QA strategy, business rules, test matrix, architecture, and requirements |
 | [Performance Test Design](docs/performance-test-design.md) | k6 load scenarios: 1 / 10 / 100 / 500 users, 2 GB upload stress test, acceptance thresholds |
 | [Security Test Design](docs/security-test-design.md) | PCI-DSS controls, OWASP Top 10, card masking, TLS, injection, authorization |
 
