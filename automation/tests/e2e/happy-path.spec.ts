@@ -22,7 +22,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await quotation.goto();
   });
 
-  test('Step 1: seller creates valid 3-round quotation', async ({ page }) => {
+  test('[TC-E2E-001] Step 1: seller creates valid 3-round quotation', async ({ page }) => {
     await quotation.fillMilestone(1, MILESTONES[0]);
     await quotation.fillMilestone(2, MILESTONES[1]);
     await quotation.addMilestoneRound();
@@ -34,7 +34,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await expect(page.locator('#review-tbody tr')).toHaveCount(3);
   });
 
-  test('Full E2E: create → accept → pay → execute all rounds → verify transferred', async () => {
+  test('[TC-E2E-002] Full E2E: create → accept → pay → execute all rounds → verify transferred', async () => {
     // ── Step 1: Create ───────────────────────────────────────────────────
     await quotation.fillMilestone(1, MILESTONES[0]);
     await quotation.fillMilestone(2, MILESTONES[1]);
@@ -74,7 +74,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await expect(execution.terminateBtn()).toBeVisible();
   });
 
-  test('UI shows masked card number in payment success message', async () => {
+  test('[TC-E2E-003] UI shows masked card number in payment success message', async () => {
     await quotation.fillMilestone(1, MILESTONES[0]);
     await quotation.fillMilestone(2, MILESTONES[1]);
     await quotation.submitQuotation();
@@ -86,7 +86,7 @@ test.describe('Happy Path E2E — 3-round milestone quotation', () => {
     await expect(payment.successAlert()).toContainText('****-****-****-4242');
   });
 
-  test('Step indicator progresses correctly through all 4 steps', async () => {
+  test('[TC-E2E-004] Step indicator progresses correctly through all 4 steps', async () => {
     await expect(quotation.step(1)).toHaveClass(/active/);
 
     await quotation.fillMilestone(1, MILESTONES[0]);

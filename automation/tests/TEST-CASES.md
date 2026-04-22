@@ -82,6 +82,33 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 | TC-AUTH-004 | Third-party user cannot view another user's quotation | Cross-user | 403 + "Forbidden" |
 | TC-AUTH-005 | Seller can view own quotation | Happy path | 200 |
 | TC-AUTH-006 | Buyer can view own quotation | Happy path | 200 |
+| TC-AUTH-007 | Inactive buyer cannot pay — rejected at payment | Account status | 403 + "inactive" |
+| TC-AUTH-008 | Inactive seller blocks payment | Account status | 403 + "inactive" |
+
+---
+
+## API — Quotation Rejection (`quotation-rejection.spec.ts`)
+
+| ID | Test Case | Type | Expected |
+|----|-----------|------|----------|
+| TC-QUO-018 | Buyer can reject a draft quotation with reason | Happy path | 200 + status=rejected + reason |
+| TC-QUO-019 | Quotation status is "rejected" after rejection | State check | 200 + status=rejected |
+| TC-QUO-020 | Defaults to generic reason when none provided | Default value | 200 + reason truthy |
+| TC-QUO-021 | Cannot reject a quotation that is already accepted | State machine | 409 + "accepted" |
+| TC-QUO-022 | Cannot reject a quotation that is already rejected | State machine | 409 |
+| TC-QUO-023 | Cannot pay a rejected quotation | State machine | 409 + "rejected" |
+| TC-QUO-024 | Cannot reject a non-existent quotation | Error handling | 404 |
+
+---
+
+## API — Contract Completion (`quotation-rejection.spec.ts`)
+
+| ID | Test Case | Type | Expected |
+|----|-----------|------|----------|
+| TC-CMP-001 | Quotation status is "completed" after final milestone accepted | State machine | status=completed |
+| TC-CMP-002 | Quotation is NOT completed if only some milestones accepted | State check | status=in_progress |
+| TC-CMP-003 | Cannot submit work on a completed quotation | Post-state | 409 |
+| TC-CMP-004 | Cannot terminate a completed quotation | Post-state | 409 |
 
 ---
 
@@ -142,12 +169,13 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 
 | Suite | File | Tests |
 |-------|------|-------|
-| Quotation API | `api/quotation.api.spec.ts` | 17 |
-| Payment API | `api/payment.api.spec.ts` | 23 |
-| Service Window | `api/service-window.spec.ts` | 7 |
-| Authorization | `api/authorization.spec.ts` | 6 |
-| UI Validation | `ui/quotation.ui.spec.ts` | 9 |
-| Happy Path E2E | `e2e/happy-path.spec.ts` | 4 |
-| Reject Work | `e2e/reject-work.spec.ts` | 6 |
-| Termination | `e2e/termination.spec.ts` | 6 |
-| **Total** | | **78** |
+| Quotation API | `api/quotation.api.spec.ts` | 17 (TC-QUO-001–017) |
+| Payment API | `api/payment.api.spec.ts` | 23 (TC-PAY-001–023) |
+| Service Window | `api/service-window.spec.ts` | 7 (TC-SW-001–007) |
+| Authorization | `api/authorization.spec.ts` | 8 (TC-AUTH-001–008) |
+| Quotation Rejection | `api/quotation-rejection.spec.ts` | 11 (TC-QUO-018–024, TC-CMP-001–004) |
+| UI Validation | `ui/quotation.ui.spec.ts` | 9 (TC-UI-001–009) |
+| Happy Path E2E | `e2e/happy-path.spec.ts` | 4 (TC-E2E-001–004) |
+| Reject Work | `e2e/reject-work.spec.ts` | 6 (TC-REJ-001–006) |
+| Termination | `e2e/termination.spec.ts` | 6 (TC-TER-001–006) |
+| **Total** | | **91** |

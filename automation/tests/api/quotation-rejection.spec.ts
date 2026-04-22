@@ -11,7 +11,7 @@ async function createDraftQuotation(request: any) {
 
 test.describe('API — Quotation rejection by buyer (Task 16)', () => {
 
-  test('buyer can reject a draft quotation with reason', async ({ request }) => {
+  test('[TC-QUO-018] buyer can reject a draft quotation with reason', async ({ request }) => {
     const id = await createDraftQuotation(request);
     const res = await request.post(`/api/v1/quotations/${id}/reject`, {
       data: { reason: 'Budget does not match' },
@@ -22,7 +22,7 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
     expect(body.reason).toBe('Budget does not match');
   });
 
-  test('quotation status is "rejected" after rejection', async ({ request }) => {
+  test('[TC-QUO-019] quotation status is "rejected" after rejection', async ({ request }) => {
     const id = await createDraftQuotation(request);
     await request.post(`/api/v1/quotations/${id}/reject`, { data: { reason: 'Too expensive' } });
 
@@ -30,14 +30,14 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
     expect(state.status).toBe('rejected');
   });
 
-  test('defaults to generic reason when none provided', async ({ request }) => {
+  test('[TC-QUO-020] defaults to generic reason when none provided', async ({ request }) => {
     const id = await createDraftQuotation(request);
     const res = await request.post(`/api/v1/quotations/${id}/reject`, { data: {} });
     expect(res.status()).toBe(200);
     expect((await res.json()).reason).toBeTruthy();
   });
 
-  test('cannot reject a quotation that is already accepted (409)', async ({ request }) => {
+  test('[TC-QUO-021] cannot reject a quotation that is already accepted (409)', async ({ request }) => {
     const id = await createDraftQuotation(request);
     await request.post(`/api/v1/quotations/${id}/accept`);
 
@@ -48,7 +48,7 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
     expect((await res.json()).error).toContain('accepted');
   });
 
-  test('cannot reject a quotation that is already rejected (409)', async ({ request }) => {
+  test('[TC-QUO-022] cannot reject a quotation that is already rejected (409)', async ({ request }) => {
     const id = await createDraftQuotation(request);
     await request.post(`/api/v1/quotations/${id}/reject`, { data: { reason: 'First rejection' } });
 
@@ -58,7 +58,7 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
     expect(res.status()).toBe(409);
   });
 
-  test('cannot pay a rejected quotation (409)', async ({ request }) => {
+  test('[TC-QUO-023] cannot pay a rejected quotation (409)', async ({ request }) => {
     const id = await createDraftQuotation(request);
     await request.post(`/api/v1/quotations/${id}/reject`, { data: { reason: 'Rejected' } });
 
@@ -77,7 +77,7 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
     expect((await res.json()).error).toContain('rejected');
   });
 
-  test('cannot reject a non-existent quotation (404)', async ({ request }) => {
+  test('[TC-QUO-024] cannot reject a non-existent quotation (404)', async ({ request }) => {
     const res = await request.post('/api/v1/quotations/INVALID-QUO/reject', {
       data: { reason: 'Test' },
     });
@@ -87,7 +87,7 @@ test.describe('API — Quotation rejection by buyer (Task 16)', () => {
 
 test.describe('API — Contract completion state (Task 17)', () => {
 
-  test('quotation status is "completed" after final milestone is accepted', async ({ request }) => {
+  test('[TC-CMP-001] quotation status is "completed" after final milestone is accepted', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request, 2);
     await request.post('/api/v1/payments', {
       data: {
@@ -110,7 +110,7 @@ test.describe('API — Contract completion state (Task 17)', () => {
     expect(state.status).toBe('completed');
   });
 
-  test('quotation is NOT completed if only some milestones accepted', async ({ request }) => {
+  test('[TC-CMP-002] quotation is NOT completed if only some milestones accepted', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request, 3);
     await request.post('/api/v1/payments', {
       data: {
@@ -132,7 +132,7 @@ test.describe('API — Contract completion state (Task 17)', () => {
     expect(state.status).not.toBe('completed');
   });
 
-  test('cannot submit work on a completed quotation (409)', async ({ request }) => {
+  test('[TC-CMP-003] cannot submit work on a completed quotation (409)', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request, 2);
     await request.post('/api/v1/payments', {
       data: {
@@ -155,7 +155,7 @@ test.describe('API — Contract completion state (Task 17)', () => {
     expect(res.status()).toBe(409);
   });
 
-  test('cannot terminate a completed quotation (409)', async ({ request }) => {
+  test('[TC-CMP-004] cannot terminate a completed quotation (409)', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request, 2);
     await request.post('/api/v1/payments', {
       data: {

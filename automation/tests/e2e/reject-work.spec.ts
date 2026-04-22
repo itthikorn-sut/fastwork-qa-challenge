@@ -9,7 +9,7 @@ test.describe('Reject-work flow (Task 15)', () => {
 
   // ── API tests ──────────────────────────────────────────────────────────────
 
-  test('API: buyer can reject submitted work — milestone returns to pending', async ({ request }) => {
+  test('[TC-REJ-001] API: buyer can reject submitted work — milestone returns to pending', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 2);
     await request.post(`/api/v1/quotations/${quotationId}/milestones/1/submit`);
 
@@ -22,7 +22,7 @@ test.describe('Reject-work flow (Task 15)', () => {
     expect(body.reason).toBe('Does not meet requirements');
   });
 
-  test('API: milestone status is pending after rejection (can resubmit)', async ({ request }) => {
+  test('[TC-REJ-002] API: milestone status is pending after rejection (can resubmit)', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 2);
     await request.post(`/api/v1/quotations/${quotationId}/milestones/1/submit`);
     await request.post(`/api/v1/quotations/${quotationId}/milestones/1/reject`, {
@@ -35,7 +35,7 @@ test.describe('Reject-work flow (Task 15)', () => {
     expect((await resubmit.json()).status).toBe('submitted');
   });
 
-  test('API: cannot reject work that is not yet submitted (409)', async ({ request }) => {
+  test('[TC-REJ-003] API: cannot reject work that is not yet submitted (409)', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 2);
 
     const res = await request.post(`/api/v1/quotations/${quotationId}/milestones/1/reject`);
@@ -43,7 +43,7 @@ test.describe('Reject-work flow (Task 15)', () => {
     expect((await res.json()).error).toContain('submitted');
   });
 
-  test('API: cannot reject work that is already accepted (409)', async ({ request }) => {
+  test('[TC-REJ-004] API: cannot reject work that is already accepted (409)', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 2);
     await request.post(`/api/v1/quotations/${quotationId}/milestones/1/submit`);
     await request.post(`/api/v1/quotations/${quotationId}/milestones/1/accept`);
@@ -54,7 +54,7 @@ test.describe('Reject-work flow (Task 15)', () => {
 
   // ── UI tests ───────────────────────────────────────────────────────────────
 
-  test('UI: reject work resets milestone status to pending and re-enables submit', async ({ page }) => {
+  test('[TC-REJ-005] UI: reject work resets milestone status to pending and re-enables submit', async ({ page }) => {
     const q = new QuotationPage(page);
     const payment = new PaymentPage(page);
     const execution = new ExecutionPage(page);
@@ -82,7 +82,7 @@ test.describe('Reject-work flow (Task 15)', () => {
     await expect(execution.rejectBtn(1)).toBeDisabled();
   });
 
-  test('UI: after rejection, seller can resubmit and buyer can accept', async ({ page }) => {
+  test('[TC-REJ-006] UI: after rejection, seller can resubmit and buyer can accept', async ({ page }) => {
     const q = new QuotationPage(page);
     const payment = new PaymentPage(page);
     const execution = new ExecutionPage(page);

@@ -14,13 +14,13 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await q.goto();
   });
 
-  test('shows error when submitting with empty required fields', async ({ page }) => {
+  test('[TC-UI-001] shows error when submitting with empty required fields', async ({ page }) => {
     // Page loads with 2 empty rounds — submit without filling anything
     await q.submitQuotation();
     await expect(q.errorAlert()).toBeVisible();
   });
 
-  test('shows error when amount is exactly 100 THB', async ({ page }) => {
+  test('[TC-UI-002] shows error when amount is exactly 100 THB', async ({ page }) => {
     await q.fillMilestone(1, { ...VALID, dueDate: futureDate(30), amount: 100 });
     await q.fillMilestone(2, { ...VALID, title: 'Phase 2', dueDate: futureDate(60), amount: 1100 });
     await q.submitQuotation();
@@ -28,7 +28,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await expect(q.errorAlert()).toContainText('100');
   });
 
-  test('shows error when total is exactly 3000 THB', async ({ page }) => {
+  test('[TC-UI-003] shows error when total is exactly 3000 THB', async ({ page }) => {
     await q.fillMilestone(1, { ...VALID, dueDate: futureDate(30), amount: 1000 });
     await q.fillMilestone(2, { ...VALID, title: 'Phase 2', dueDate: futureDate(60), amount: 2000 });
     await q.submitQuotation();
@@ -36,7 +36,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await expect(q.errorAlert()).toContainText('3000');
   });
 
-  test('shows error for past due date', async ({ page }) => {
+  test('[TC-UI-004] shows error for past due date', async ({ page }) => {
     await q.fillMilestone(1, { ...VALID, dueDate: pastDate(), amount: 1600 });
     await q.fillMilestone(2, { ...VALID, title: 'Phase 2', dueDate: futureDate(60), amount: 1600 });
     await q.submitQuotation();
@@ -44,7 +44,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await expect(q.errorAlert()).toContainText('future');
   });
 
-  test('add round button is hidden after 5 rounds are added', async ({ page }) => {
+  test('[TC-UI-005] add round button is hidden after 5 rounds are added', async ({ page }) => {
     // 2 rounds exist already — add 3 more
     await q.addMilestoneRound();
     await q.addMilestoneRound();
@@ -52,7 +52,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await expect(page.locator('[data-testid="add-round-btn"]')).toBeHidden();
   });
 
-  test('total amount display updates as amounts are entered', async ({ page }) => {
+  test('[TC-UI-006] total amount display updates as amounts are entered', async ({ page }) => {
     await q.clearAndFillAmount(1, 1500);
     await q.clearAndFillAmount(2, 2000);
 
@@ -60,7 +60,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
     await expect(totalDisplay).toContainText('3,500');
   });
 
-  test('valid 2-round quotation is accepted and moves to step 2', async ({ page }) => {
+  test('[TC-UI-007] valid 2-round quotation is accepted and moves to step 2', async ({ page }) => {
     await q.fillMilestone(1, { ...VALID, dueDate: futureDate(30), amount: 1600 });
     await q.fillMilestone(2, { ...VALID, title: 'Phase 2', dueDate: futureDate(60), amount: 1600 });
     await q.submitQuotation();
@@ -71,7 +71,7 @@ test.describe('UI — Quotation form client-side validation (Task 7)', () => {
 
 test.describe('UI — Payment form client-side validation', () => {
 
-  test('shows inline error for invalid card number', async ({ page }) => {
+  test('[TC-UI-008] shows inline error for invalid card number', async ({ page }) => {
     const q = new QuotationPage(page);
     await q.goto();
     await q.fillMilestone(1, { title: 'P1', description: 'D', deliverables: 'Del', dueDate: futureDate(30), amount: 1600 });
@@ -88,7 +88,7 @@ test.describe('UI — Payment form client-side validation', () => {
     await expect(page.locator('#card-number-error')).toBeVisible();
   });
 
-  test('shows inline error for invalid expiry format', async ({ page }) => {
+  test('[TC-UI-009] shows inline error for invalid expiry format', async ({ page }) => {
     const q = new QuotationPage(page);
     await q.goto();
     await q.fillMilestone(1, { title: 'P1', description: 'D', deliverables: 'Del', dueDate: futureDate(30), amount: 1600 });

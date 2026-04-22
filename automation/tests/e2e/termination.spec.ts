@@ -7,7 +7,7 @@ import { VALID_CARD, futureDate } from '../../fixtures/testData';
 
 test.describe('Termination scenario (Task 12)', () => {
 
-  test('API: terminate after round 1 — correct completed/remaining counts', async ({ request }) => {
+  test('[TC-TER-001] API: terminate after round 1 — correct completed/remaining counts', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 3);
 
     // Complete round 1
@@ -23,7 +23,7 @@ test.describe('Termination scenario (Task 12)', () => {
     expect(body.remaining_rounds).toBe(2);
   });
 
-  test('API: cannot terminate an already terminated quotation', async ({ request }) => {
+  test('[TC-TER-002] API: cannot terminate an already terminated quotation', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 2);
     await request.post(`/api/v1/quotations/${quotationId}/terminate`);
 
@@ -32,7 +32,7 @@ test.describe('Termination scenario (Task 12)', () => {
     expect((await retry.json()).error).toContain('terminated');
   });
 
-  test('API: after termination, submitting work returns error', async ({ request }) => {
+  test('[TC-TER-003] API: after termination, submitting work returns error', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 3);
     await request.post(`/api/v1/quotations/${quotationId}/terminate`);
 
@@ -40,7 +40,7 @@ test.describe('Termination scenario (Task 12)', () => {
     expect(res.status()).toBe(409);
   });
 
-  test('API: quotation state is "terminated" after terminate call', async ({ request }) => {
+  test('[TC-TER-004] API: quotation state is "terminated" after terminate call', async ({ request }) => {
     const { quotationId } = await createAcceptAndPay(request, 3);
     await request.post(`/api/v1/quotations/${quotationId}/terminate`);
 
@@ -48,7 +48,7 @@ test.describe('Termination scenario (Task 12)', () => {
     expect(state.status).toBe('terminated');
   });
 
-  test('UI: terminate button disables all action buttons', async ({ page }) => {
+  test('[TC-TER-005] UI: terminate button disables all action buttons', async ({ page }) => {
     const q = new QuotationPage(page);
     const payment = new PaymentPage(page);
     const execution = new ExecutionPage(page);
@@ -73,7 +73,7 @@ test.describe('Termination scenario (Task 12)', () => {
     await expect(page.locator('[data-testid="submit-work-2"]')).toBeDisabled();
   });
 
-  test('UI: termination shows info message with round counts', async ({ page }) => {
+  test('[TC-TER-006] UI: termination shows info message with round counts', async ({ page }) => {
     const q = new QuotationPage(page);
     const payment = new PaymentPage(page);
     const execution = new ExecutionPage(page);

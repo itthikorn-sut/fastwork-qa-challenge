@@ -5,7 +5,7 @@ import { VALID_CARD } from '../../fixtures/testData';
 
 test.describe('API — Cross-user authorization (Task 14)', () => {
 
-  test('buyer B cannot pay for buyer A quotation (403)', async ({ request }) => {
+  test('[TC-AUTH-001] buyer B cannot pay for buyer A quotation (403)', async ({ request }) => {
     // Quotation created with buyer_id = BUYER-TEST (default)
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
@@ -25,7 +25,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect((await res.json()).error).toContain('Forbidden');
   });
 
-  test('seller cannot initiate payment for own quotation (403)', async ({ request }) => {
+  test('[TC-AUTH-002] seller cannot initiate payment for own quotation (403)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
     // Seller tries to pay — seller_id is SELLER-TEST
@@ -44,7 +44,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect(res.status()).toBe(403);
   });
 
-  test('correct buyer can pay own quotation (200)', async ({ request }) => {
+  test('[TC-AUTH-003] correct buyer can pay own quotation (200)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
     const res = await request.post('/api/v1/payments', {
@@ -62,7 +62,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect(res.status()).toBe(200);
   });
 
-  test('third-party user cannot view another user quotation (403)', async ({ request }) => {
+  test('[TC-AUTH-004] third-party user cannot view another user quotation (403)', async ({ request }) => {
     const payload = buildQuotationPayload(2);
     const created = await request.post('/api/v1/quotations', { data: payload });
     const { quotation_id } = await created.json();
@@ -74,7 +74,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect((await res.json()).error).toContain('Forbidden');
   });
 
-  test('seller can view own quotation (200)', async ({ request }) => {
+  test('[TC-AUTH-005] seller can view own quotation (200)', async ({ request }) => {
     const payload = buildQuotationPayload(2);
     const created = await request.post('/api/v1/quotations', { data: payload });
     const { quotation_id } = await created.json();
@@ -85,7 +85,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
     expect(res.status()).toBe(200);
   });
 
-  test('buyer can view own quotation (200)', async ({ request }) => {
+  test('[TC-AUTH-006] buyer can view own quotation (200)', async ({ request }) => {
     const payload = buildQuotationPayload(2);
     const created = await request.post('/api/v1/quotations', { data: payload });
     const { quotation_id } = await created.json();
@@ -99,7 +99,7 @@ test.describe('API — Cross-user authorization (Task 14)', () => {
 
 test.describe('API — Account status must be active', () => {
 
-  test('inactive buyer cannot pay — rejected at payment (403)', async ({ request }) => {
+  test('[TC-AUTH-007] inactive buyer cannot pay — rejected at payment (403)', async ({ request }) => {
     // Create quotation with inactive buyer_id — account status is checked at payment, not creation
     const payload = { ...buildQuotationPayload(2), buyer_id: 'INACTIVE-BUYER-001' };
     const created = await request.post('/api/v1/quotations', { data: payload });
@@ -121,7 +121,7 @@ test.describe('API — Account status must be active', () => {
     expect((await res.json()).error).toContain('inactive');
   });
 
-  test('inactive seller blocks payment (403)', async ({ request }) => {
+  test('[TC-AUTH-008] inactive seller blocks payment (403)', async ({ request }) => {
     const payload = { ...buildQuotationPayload(2), seller_id: 'INACTIVE-SELLER-001' };
     const created = await request.post('/api/v1/quotations', { data: payload });
     const { quotation_id, total_amount } = await created.json();

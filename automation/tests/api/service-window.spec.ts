@@ -14,7 +14,7 @@ const payPayload = (quotationId: string, totalAmount: number) => ({
 
 test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
 
-  test('payment is blocked at 23:55 (start of window)', async ({ request }) => {
+  test('[TC-SW-001] payment is blocked at 23:55 (start of window)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -24,7 +24,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect((await res.json()).error).toContain('maintenance window');
   });
 
-  test('payment is blocked at 23:59 (mid-window)', async ({ request }) => {
+  test('[TC-SW-002] payment is blocked at 23:59 (mid-window)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -33,7 +33,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect(res.status()).toBe(503);
   });
 
-  test('payment is blocked at 00:00 (midnight)', async ({ request }) => {
+  test('[TC-SW-003] payment is blocked at 00:00 (midnight)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -42,7 +42,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect(res.status()).toBe(503);
   });
 
-  test('payment is blocked at 00:15 (end of window)', async ({ request }) => {
+  test('[TC-SW-004] payment is blocked at 00:15 (end of window)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -51,7 +51,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect(res.status()).toBe(503);
   });
 
-  test('payment succeeds at 00:16 (just after window)', async ({ request }) => {
+  test('[TC-SW-005] payment succeeds at 00:16 (just after window)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -60,7 +60,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect(res.status()).toBe(200);
   });
 
-  test('payment succeeds at 23:54 (just before window)', async ({ request }) => {
+  test('[TC-SW-006] payment succeeds at 23:54 (just before window)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),
@@ -69,7 +69,7 @@ test.describe('API — Service window 23:55–00:15 (Task 13)', () => {
     expect(res.status()).toBe(200);
   });
 
-  test('payment succeeds at 12:00 (normal business hours)', async ({ request }) => {
+  test('[TC-SW-007] payment succeeds at 12:00 (normal business hours)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: payPayload(quotationId, totalAmount),

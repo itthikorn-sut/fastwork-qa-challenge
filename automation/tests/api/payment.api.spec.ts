@@ -15,7 +15,7 @@ const validPayload = (quotationId: string, totalAmount: number, overrides = {}) 
 
 test.describe('API — Payment failure scenarios (Task 6)', () => {
 
-  test('rejects missing required fields', async ({ request }) => {
+  test('[TC-PAY-001] rejects missing required fields', async ({ request }) => {
     const res = await request.post('/api/v1/payments', { data: {} });
     expect(res.status()).toBe(400);
     const body = await res.json();
@@ -26,7 +26,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect(body.fields).toContain('currency');
   });
 
-  test('rejects missing credit_card_owner_name', async ({ request }) => {
+  test('[TC-PAY-002] rejects missing credit_card_owner_name', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { credit_card_owner_name: '' }),
@@ -35,7 +35,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).fields).toContain('credit_card_owner_name');
   });
 
-  test('rejects invalid card number (too short)', async ({ request }) => {
+  test('[TC-PAY-003] rejects invalid card number (too short)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { credit_card_number: '1234' }),
@@ -44,7 +44,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('16 digits');
   });
 
-  test('rejects invalid card number (non-numeric)', async ({ request }) => {
+  test('[TC-PAY-004] rejects invalid card number (non-numeric)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { credit_card_number: 'abcd-efgh-ijkl-mnop' }),
@@ -52,7 +52,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect(res.status()).toBe(400);
   });
 
-  test('rejects invalid expiration_date format', async ({ request }) => {
+  test('[TC-PAY-005] rejects invalid expiration_date format', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { expiration_date: '13/99' }),
@@ -61,7 +61,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('MM/YY');
   });
 
-  test('rejects invalid CVV (too short)', async ({ request }) => {
+  test('[TC-PAY-006] rejects invalid CVV (too short)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { cvv: '12' }),
@@ -70,7 +70,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('CVV');
   });
 
-  test('returns 402 for insufficient funds (Omise declined card)', async ({ request }) => {
+  test('[TC-PAY-007] returns 402 for insufficient funds (Omise declined card)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { credit_card_number: DECLINED_CARD.number }),
@@ -80,7 +80,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect(body.failure_code).toBe('insufficient_fund');
   });
 
-  test('returns 402 when amount exceeds 1,000,000', async ({ request }) => {
+  test('[TC-PAY-008] returns 402 when amount exceeds 1,000,000', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, 1_000_001, {}),
@@ -88,7 +88,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect(res.status()).toBe(402);
   });
 
-  test('rejects amount below 0.01', async ({ request }) => {
+  test('[TC-PAY-009] rejects amount below 0.01', async ({ request }) => {
     const { quotationId } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, 0, {}),
@@ -96,7 +96,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect(res.status()).toBe(400);
   });
 
-  test('rejects unsupported currency (USD not in THB/VND/IDR)', async ({ request }) => {
+  test('[TC-PAY-010] rejects unsupported currency (USD not in THB/VND/IDR)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { currency: 'USD' }),
@@ -105,7 +105,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('Unsupported currency');
   });
 
-  test('accepts payment in VND currency', async ({ request }) => {
+  test('[TC-PAY-011] accepts payment in VND currency', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { currency: 'VND' }),
@@ -114,7 +114,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).currency).toBe('VND');
   });
 
-  test('accepts payment in IDR currency', async ({ request }) => {
+  test('[TC-PAY-012] accepts payment in IDR currency', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { currency: 'IDR' }),
@@ -123,7 +123,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).currency).toBe('IDR');
   });
 
-  test('returns 401 for invalid Authorization token', async ({ request }) => {
+  test('[TC-PAY-013] returns 401 for invalid Authorization token', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, {}),
@@ -133,7 +133,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('UNAUTHORIZE');
   });
 
-  test('returns 500 for payment gateway failure (simulated card)', async ({ request }) => {
+  test('[TC-PAY-014] returns 500 for payment gateway failure (simulated card)', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, { credit_card_number: '9999999999999999' }),
@@ -142,7 +142,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('INTERNAL_SERVER_ERROR');
   });
 
-  test('rejects payment on non-accepted quotation', async ({ request }) => {
+  test('[TC-PAY-015] rejects payment on non-accepted quotation', async ({ request }) => {
     const { data } = await (async () => {
       const payload = buildQuotationPayload(3);
       const res = await request.post('/api/v1/quotations', { data: payload });
@@ -155,7 +155,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
     expect((await res.json()).error).toContain('accepted');
   });
 
-  test('successful payment returns correct shape', async ({ request }) => {
+  test('[TC-PAY-016] successful payment returns correct shape', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, {}),
@@ -172,7 +172,7 @@ test.describe('API — Payment failure scenarios (Task 6)', () => {
 
 test.describe('API — Idempotency (Task 8)', () => {
 
-  test('same idempotency_key returns identical response without double charge', async ({ request }) => {
+  test('[TC-PAY-017] same idempotency_key returns identical response without double charge', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const key = `idem-${Date.now()}-${Math.random()}`;
     const payload = validPayload(quotationId, totalAmount, { idempotency_key: key });
@@ -189,7 +189,7 @@ test.describe('API — Idempotency (Task 8)', () => {
     expect(body2.paid_at).toBe(body1.paid_at);
   });
 
-  test('different idempotency_key after first payment returns 409', async ({ request }) => {
+  test('[TC-PAY-018] different idempotency_key after first payment returns 409', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
     await request.post('/api/v1/payments', {
@@ -205,7 +205,7 @@ test.describe('API — Idempotency (Task 8)', () => {
 
 test.describe('API — Concurrency (Task 9)', () => {
 
-  test('concurrent duplicate requests with same idempotency_key return consistent result', async ({ request }) => {
+  test('[TC-PAY-019] concurrent duplicate requests with same idempotency_key return consistent result', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     const key = `concurrent-${Date.now()}`;
     const payload = validPayload(quotationId, totalAmount, { idempotency_key: key });
@@ -225,7 +225,7 @@ test.describe('API — Concurrency (Task 9)', () => {
 
 test.describe('API — Data consistency (Task 11)', () => {
 
-  test('charged amount matches requested amount exactly', async ({ request }) => {
+  test('[TC-PAY-020] charged amount matches requested amount exactly', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request, 3, 1100);
     const res = await request.post('/api/v1/payments', {
       data: validPayload(quotationId, totalAmount, {}),
@@ -234,7 +234,7 @@ test.describe('API — Data consistency (Task 11)', () => {
     expect(body.amount).toBe(totalAmount);
   });
 
-  test('quotation state is "paid" after successful payment', async ({ request }) => {
+  test('[TC-PAY-021] quotation state is "paid" after successful payment', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
     await request.post('/api/v1/payments', { data: validPayload(quotationId, totalAmount, {}) });
 
@@ -248,7 +248,7 @@ test.describe('API — Data consistency (Task 11)', () => {
 
 test.describe('API — Partial failure simulation (Task 10)', () => {
 
-  test('payment success does not leave quotation in accepted state', async ({ request }) => {
+  test('[TC-PAY-022] payment success does not leave quotation in accepted state', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
     const payRes = await request.post('/api/v1/payments', {
@@ -261,7 +261,7 @@ test.describe('API — Partial failure simulation (Task 10)', () => {
     expect(state.status).toBe('paid');
   });
 
-  test('payment on already-paid quotation is rejected', async ({ request }) => {
+  test('[TC-PAY-023] payment on already-paid quotation is rejected', async ({ request }) => {
     const { quotationId, totalAmount } = await createAndAcceptQuotation(request);
 
     await request.post('/api/v1/payments', { data: validPayload(quotationId, totalAmount, {}) });
