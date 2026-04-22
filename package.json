@@ -10,7 +10,8 @@
     "test:report": "playwright show-report",
     "mock:server": "ts-node automation/utils/mockServer.ts",
     "perf:payment": "k6 run k6/payment-load.js",
-    "perf:quotation": "k6 run k6/quotation-load.js"
+    "perf:quotation": "k6 run k6/quotation-load.js",
+    "docs:post-issues": "python scripts/post_issues.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
