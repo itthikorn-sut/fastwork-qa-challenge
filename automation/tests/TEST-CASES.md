@@ -165,6 +165,37 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 
 ---
 
+## Security & Compliance (`compliance.spec.ts`) — Bonus Challenge
+
+### PCI-DSS & GDPR Compliance Tests
+
+| ID | Test Case | Requirement | Expected |
+|----|-----------|-------------|----------|
+| S-01 | Card number not stored in plaintext in response | PCI-DSS Req 3 | 200 + no "4111111111111111" in body |
+| S-02 | Card number masked in API response (last 4 digits only) | PCI-DSS Req 3.2.1 | 200 + masked_card="****-****-****-1111" |
+| S-03 | CVV not returned in any API response | PCI-DSS Req 3.2.1 | 200 + cvv field absent |
+| S-04 | Payment response contains no raw card data | PCI-DSS Req 3 | 200 + only safe fields (payment_id, amount, masked_card) |
+| S-08 | SQL injection in quotation title field is sanitized | OWASP A03:2021 | 400 or 201 (sanitized), not 500 |
+| S-09 | XSS payload in milestone description is escaped | OWASP A03:2021 | Payload not executed in DOM |
+| S-10 | Oversized payload (> 10 MB) is rejected | Input validation | 400 or 413 Payload Too Large |
+| S-11 | Negative amount in payment is rejected | Business logic | 400 — amount must be positive |
+| S-12 | Unauthenticated request to payment returns 401 | PCI-DSS Req 8 | 401 + "UNAUTHORIZE" |
+| S-13 | Cross-user quotation access is prevented | PCI-DSS Req 8.2 | 403 Forbidden or 409 Conflict |
+| S-14 | Seller cannot trigger fund transfer directly via API | PCI-DSS Req 8.2 (RBAC) | 403 Forbidden or 404 Not Found |
+| S-15 | Card number is absent from application logs | PCI-DSS Req 10.1 | Logs do not contain "4111111111111111" |
+| S-16 | CVV is absent from application logs | PCI-DSS Req 10.1 | Logs do not contain CVV value |
+| S-17 | Successful payments are audit-logged with safe fields | PCI-DSS Req 10 | 200 + payment_id, amount, timestamp, no card data |
+| GDPR-01 | User data minimization: only necessary fields collected | GDPR Article 5(1)(c) | 201 + no unnecessary PII (email, phone, SSN) |
+| GDPR-02 | Payment data not retained longer than necessary | GDPR Article 5(1)(e) | 200 + no full card data in subsequent queries |
+| GDPR-03 | User can request data deletion (right to be forgotten) | GDPR Article 17 | 200 (if DELETE implemented) or 501 Not Implemented |
+| S-05 | All endpoints enforce HTTPS (HTTP redirects) | PCI-DSS Req 4 | 301/302 redirect or HTTPS connection |
+| S-06 | Authorization header prevents plaintext transmission | PCI-DSS Req 4 | 200 + secure transport |
+| S-07 | Security headers present in responses | Defense in depth | Content-Type, X-Content-Type-Options, etc. present |
+
+**Total Security Tests:** 20 (S-01–S-17, GDPR-01–03, S-05–S-07)
+
+---
+
 ## Findings — Known Defects (`findings.spec.ts`)
 
 > These tests are **expected to fail**. Each failure is a documented bug. Do not fix the implementation to make them pass — the failures are the deliverable.
@@ -192,9 +223,10 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 | Service Window | `api/service-window.spec.ts` | 7 (TC-SW-001–007) |
 | Authorization | `api/authorization.spec.ts` | 8 (TC-AUTH-001–008) |
 | Quotation Rejection | `api/quotation-rejection.spec.ts` | 11 (TC-QUO-018–024, TC-CMP-001–004) |
+| **Security & Compliance** | **`security/compliance.spec.ts`** | **20 (S-01–S-17, GDPR-01–03, S-05–S-07)** ← **BONUS** |
 | UI Validation | `ui/quotation.ui.spec.ts` | 9 (TC-UI-001–009) |
 | Happy Path E2E | `e2e/happy-path.spec.ts` | 4 (TC-E2E-001–004) |
 | Reject Work | `e2e/reject-work.spec.ts` | 6 (TC-REJ-001–006) |
 | Termination | `e2e/termination.spec.ts` | 6 (TC-TER-001–006) |
-| Findings (expected fail) | `findings.spec.ts` | 10 (FINDING-001–006) |
-| **Total** | | **101** |
+| Findings (expected fail) | `findings.spec.ts` | 8 (FINDING-001–006) |
+| **Total** | | **120** |

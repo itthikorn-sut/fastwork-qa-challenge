@@ -83,7 +83,7 @@ npm run mock:server
 
 ---
 
-## Test Suite — 104 Tests
+## Test Suite — 120 Tests (96 Passing + 8 Expected Failures + 20 Security)
 
 ### Coverage by Category
 
@@ -92,13 +92,14 @@ npm run mock:server
 | API — Quotation Validation | `tests/api/quotation.api.spec.ts` | 24 | Business rules, edge cases, account status |
 | API — Payment Scenarios | `tests/api/payment.api.spec.ts` | 23 | Failures, idempotency, concurrency, data consistency |
 | API — Maintenance Window Demo | `tests/api/demo-bypass-window.spec.ts` | 4 | Time simulation header, boundary testing |
+| **Security & Compliance (Bonus)** | **`tests/security/compliance.spec.ts`** | **20** | **PCI-DSS & GDPR compliance: data masking, injection prevention, auth, audit logging** |
 | UI — Form Validation | `tests/ui/quotation.ui.spec.ts` | 9 | Client-side validation behavior |
 | UI — Payment & Account Status | `tests/ui/payment.ui.spec.ts` | 18 | Payment form, card validation, account status checks |
 | E2E — Happy Path | `tests/e2e/happy-path.spec.ts` | 4 | Full 4-step flow |
 | E2E — Termination | `tests/e2e/termination.spec.ts` | 5 | Contract termination states |
 | E2E — Contract Completion | `tests/e2e/contract-completion.spec.ts` | 4 | Milestone acceptance, fund transfer, completion |
 | Findings (Expected Failures) | `tests/findings.spec.ts` | 6 | Bug documentation: validation gaps, UI issues |
-| **TOTAL** | | **96 passing + 8 expected failures** | |
+| **TOTAL** | | **120 tests** | **96 passing + 8 expected + 20 security** |
 
 ### Key Scenarios Covered
 
@@ -180,6 +181,109 @@ GitHub Actions runs the full test suite on every push and pull request.
 5. Upload HTML report with videos/screenshots as artifact (retained 14 days)
 
 **[→ View workflow](.github/workflows/playwright.yml)**
+
+---
+
+## Security & Compliance Testing (Bonus Challenge)
+
+This project includes **20 comprehensive security compliance tests** validating **PCI-DSS** and **GDPR** requirements.
+
+### Security Test Coverage
+
+| Category | Tests | PCI-DSS Requirement | GDPR Article |
+|---|---|---|---|
+| **Card Data Protection** | S-01 to S-04 | Req 3 (Protect stored cardholder data) | Article 32 (Security) |
+| **Input Validation & Injection** | S-08 to S-11 | Req 6 (Secure applications) | Article 32 (Security) |
+| **Authentication & Authorization** | S-12 to S-14 | Req 8 (Identify & authenticate access) | Article 32 (Security) |
+| **Audit Logging** | S-15 to S-17 | Req 10 (Track & monitor all access) | Article 5 (Principles) |
+| **Transport Security** | S-05 to S-07 | Req 4 (Encrypt transmission) | Article 32 (Security) |
+| **Data Minimization & Retention** | GDPR-01 to GDPR-03 | — | Article 5(1)(c), 5(1)(e), 17 |
+
+### Key Security Tests
+
+- **Card Masking** — Card numbers masked as `****-****-****-XXXX` in responses (S-02)
+- **CVV Never Logged** — CVV values never stored or returned (S-03, S-16)
+- **Input Validation** — SQL injection, XSS, oversized payloads rejected (S-08 to S-11)
+- **Authorization** — Cross-user access prevented, role-based controls (S-12 to S-14)
+- **Data Minimization** — Only necessary PII collected, no excessive data storage (GDPR-01)
+- **Audit Logging** — Safe fields logged (payment_id, amount, timestamp), no card data (S-17)
+
+### Run Security Tests
+
+```bash
+# Run only security compliance tests
+npx playwright test automation/tests/security/compliance.spec.ts
+
+# Run with list reporter to see all test results
+npx playwright test automation/tests/security/compliance.spec.ts --reporter=list
+
+# View detailed HTML report with traces and videos
+npx playwright show-report
+```
+
+**Documentation:**
+- **[Security Testing Guide](automation/tests/security/TESTING-GUIDE.md)** — How to run and understand API security tests
+- **[Security Test Design](docs/security-test-design.md)** — PCI-DSS & GDPR compliance mapping
+
+---
+
+## Performance Testing — k6 Load Tests (Bonus Challenge)
+
+Beyond functional testing, this project includes performance and load testing using [k6](https://k6.io) — an open-source load testing tool.
+
+### Load Test Scenarios
+
+| Test | File | Purpose |
+|---|---|---|
+| **Quotation Creation** | `k6/quotation-load.js` | API throughput under concurrent quotation creation (1 → 100 VUs) |
+| **Payment Processing** | `k6/payment-load.js` | Payment latency & error rates under stress (1 → 500 VUs) |
+
+### Running k6 Tests
+
+```bash
+# Install k6 (https://k6.io/docs/getting-started/installation/)
+# macOS: brew install k6
+# Linux: apt-get install k6
+# Windows: choco install k6
+
+# Start mock server in one terminal
+npm run mock:server
+
+# In another terminal, run quotation load test
+npm run perf:quotation
+# or
+k6 run k6/quotation-load.js
+
+# Run payment load test
+npm run perf:payment
+# or
+k6 run k6/payment-load.js
+
+# With custom base URL
+k6 run -e BASE_URL=http://api.example.com k6/payment-load.js
+```
+
+### Load Test Design
+
+**Quotation Creation Test:**
+- Ramp-up: 1 user → 10 → 100 users over 3m 30s
+- Each VU creates fresh quotation with 2 milestones
+- SLA: p(95) < 2s, p(99) < 5s, error rate < 1%
+
+**Payment Processing Test:**
+- Ramp-up: 1 user → 10 → 100 → 500 users over 7 minutes
+- Pre-creates 10 accepted quotations in setup phase
+- Each VU performs payment with unique idempotency key
+- SLA: p(95) < 2s, error rate < 1%
+- **Peak:** 500 concurrent users for 3 minutes to find breaking point
+
+**Metrics Tracked:**
+- HTTP request duration (latency histogram)
+- Error rate per endpoint
+- Throughput (requests/second)
+- Custom metrics: `payment_duration_ms`, `quotation_create_errors`
+
+### [→ View k6 Test Details](k6/README.md)
 
 ---
 
