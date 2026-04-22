@@ -83,7 +83,31 @@ npm run mock:server
 
 ---
 
-## Test Suite — 120 Tests (96 Passing + 8 Expected Failures + 20 Security)
+## Test Documentation
+
+### 📋 Complete Test Case Documentation
+
+All **120 tests documented** with business rules, steps, and expected results:
+
+**Quick Reference (Local):**
+
+- [Test Cases Catalog](automation/tests/TEST-CASES.md) — All 120 tests in quick reference tables
+
+**Detailed Documentation (GitHub Issues):**
+
+- [Issue #1: API — Quotation Validation](https://github.com/itthikorn-sut/fastwork-qa-challenge/issues/1) — 17 boundary & validation tests
+- [Issue #2: API — Payment Processing](https://github.com/itthikorn-sut/fastwork-qa-challenge/issues/2) — 23 payment scenario tests with idempotency & concurrency
+- [Issue #3: API — Authorization & Security](https://github.com/itthikorn-sut/fastwork-qa-challenge/issues/3) — Cross-user isolation, PCI-DSS & GDPR compliance (28 tests)
+- [Issue #4: E2E & State Machine](https://github.com/itthikorn-sut/fastwork-qa-challenge/issues/4) — Full flow tests, rejections, termination (16 tests)
+- [📌 Issue #5: Known Defects](https://github.com/itthikorn-sut/fastwork-qa-challenge/issues/5) — 9 documented bugs with root cause & fix strategies (PINNED)
+
+**Strategy Guide:**
+
+- [Documentation Strategy](docs/DOCUMENTATION-STRATEGY.md) — Three-tier approach, navigation patterns, maintenance plan
+
+---
+
+## Test Suite — 120 Tests (96 Passing + 9 Expected Failures + 20 Security)
 
 ### Coverage by Category
 
