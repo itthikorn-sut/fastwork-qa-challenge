@@ -218,3 +218,40 @@ test.describe('FINDING-005 — credit_card_owner_name max 100 characters not enf
     expect(res.status()).toBe(400);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FINDING-006: CVV validation allows non-numeric characters
+//
+// Expected: CVV should accept digits only (0-9). Non-numeric input should
+//           show an inline validation error.
+// Actual:   The UI input has no validation for non-numeric characters.
+//           Users can type letters and special characters (e.g., 'abc1')
+//           and the form allows submission. The API will reject it, but
+//           the UI should catch this first.
+// Severity: Low → Medium — UI should prevent non-numeric input or show error
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('FINDING-006 — CVV input accepts non-numeric characters', () => {
+
+  test('[FAIL] shows inline error when CVV contains non-numeric characters', async ({ page }) => {
+    const q = new QuotationPage(page);
+    const payment = new PaymentPage(page);
+
+    await q.goto();
+    await q.fillMilestone(1, { title: 'P1', description: 'D', deliverables: 'Del', dueDate: futureDate(30), amount: 1600 });
+    await q.fillMilestone(2, { title: 'P2', description: 'D', deliverables: 'Del', dueDate: futureDate(60), amount: 1600 });
+    await q.submitQuotation();
+    await payment.acceptQuotation();
+
+    // Fill card details with non-numeric CVV
+    await page.waitForSelector('[data-testid="card-number"]', { state: 'visible' });
+    await page.fill('[data-testid="card-number"]', VALID_CARD.number);
+    await page.fill('[data-testid="card-expiry"]', VALID_CARD.expiry);
+    await page.fill('[data-testid="card-cvv"]', 'abc1');  // Non-numeric CVV
+
+    await payment.pay();
+
+    // Expected: inline error visible next to CVV field
+    // Actual:   form may submit or allow submission without error
+    await expect(page.locator('#card-cvv-error')).toBeVisible();
+  });
+});

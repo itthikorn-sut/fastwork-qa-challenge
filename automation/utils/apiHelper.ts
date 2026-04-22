@@ -1,9 +1,12 @@
 import { APIRequestContext } from '@playwright/test';
 import { buildQuotationPayload, VALID_CARD } from '../fixtures/testData';
 
+// Default headers to bypass maintenance window (23:55–00:15)
+const BYPASS_WINDOW = { 'x-simulated-time': '12:00' };
+
 export async function createQuotation(request: APIRequestContext, overrides?: object) {
   const payload = overrides ?? buildQuotationPayload();
-  const res = await request.post('/api/v1/quotations', { data: payload });
+  const res = await request.post('/api/v1/quotations', { data: payload, headers: BYPASS_WINDOW });
   return { res, data: await res.json() };
 }
 
@@ -34,6 +37,7 @@ export async function createAcceptAndPay(
       currency: 'THB',
       idempotency_key: `setup-${quotationId}`,
     },
+    headers: BYPASS_WINDOW,
   });
   const payData = await payRes.json();
   return { quotationId, totalAmount, paymentId: payData.payment_id };

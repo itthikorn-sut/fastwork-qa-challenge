@@ -165,6 +165,24 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 
 ---
 
+## Findings — Known Defects (`findings.spec.ts`)
+
+> These tests are **expected to fail**. Each failure is a documented bug. Do not fix the implementation to make them pass — the failures are the deliverable.
+
+| ID | Test Case | Severity | Expected (Requirement) | Actual (Bug) |
+|----|-----------|----------|------------------------|--------------|
+| FINDING-001a | Cannot submit round 2 before round 1 is accepted | High | 409 — previous round not accepted | 200 — skips accepted |
+| FINDING-001b | Cannot submit round 3 while round 2 is only submitted | High | 409 — round 2 must be accepted first | 200 — accepted immediately |
+| FINDING-002a | Cannot terminate a draft quotation | Medium | 409 — contract was never active | 200 — draft terminated |
+| FINDING-002b | Cannot terminate a rejected quotation | Medium | 409 — nothing to terminate | 200 — rejected terminated |
+| FINDING-003a | Cannot pay less than the quotation total | Critical | 400/422 — amount mismatch | 200 — underpayment accepted |
+| FINDING-003b | Cannot pay more than the quotation total | Critical | 400/422 — amount mismatch | 200 — overpayment accepted |
+| FINDING-004 | Shows inline error when card holder name is empty | Medium | Inline error visible | Payment succeeds with 'CARD HOLDER' substituted silently |
+| FINDING-005 | Rejects credit_card_owner_name exceeding 100 characters | Medium | 400 — exceeds 100-char limit | 200 — oversized name accepted |
+| FINDING-006 | Shows inline error when CVV contains non-numeric characters | Low→Medium | Inline error visible | UI may allow non-numeric CVV submission |
+
+---
+
 ## Summary
 
 | Suite | File | Tests |
@@ -178,4 +196,5 @@ Complete list of all automated test cases across API, UI, and E2E suites.
 | Happy Path E2E | `e2e/happy-path.spec.ts` | 4 (TC-E2E-001–004) |
 | Reject Work | `e2e/reject-work.spec.ts` | 6 (TC-REJ-001–006) |
 | Termination | `e2e/termination.spec.ts` | 6 (TC-TER-001–006) |
-| **Total** | | **91** |
+| Findings (expected fail) | `findings.spec.ts` | 10 (FINDING-001–006) |
+| **Total** | | **101** |
