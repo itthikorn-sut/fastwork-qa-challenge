@@ -1,10 +1,7 @@
 # Fastwork Senior QA Challenge
 ### Milestone Quotation & Payment Flow — Test Strategy & Automation
 
-![Playwright Tests](https://github.com/itthikorn-sut/fastwork-qa-challenge/actions/workflows/playwright.yml/badge.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)
-![Playwright](https://img.shields.io/badge/Playwright-1.44-green?logo=playwright)
-![Tests](https://img.shields.io/badge/Tests-51%20passing-brightgreen)
+
 
 ---
 
